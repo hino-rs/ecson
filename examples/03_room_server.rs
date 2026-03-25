@@ -1,4 +1,4 @@
-use fluxion::prelude::*;
+use fluxion::{ecs::resources::ServerTickRate, prelude::*};
 use tokio_tungstenite::tungstenite::Message as WsMessage;
 
 // Roomの参加・退出・メッセージ送信を処理するシステム
@@ -62,8 +62,8 @@ fn main() {
 
     let mut app = FluxionApp::new();
 
-    app.add_plugins(FluxionNetworkPlugin::new("127.0.0.1:8080"))
-        // Roomシステムを登録
+    app.insert_resource(ServerTickRate::NORMAL)
+        .add_plugins(FluxionNetworkPlugin::new("127.0.0.1:8080"))
         .add_systems(MainSchedule, room_chat_system);
 
     app.run();

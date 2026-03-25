@@ -1,15 +1,17 @@
 //! Defines the `FluxionApp` struct, which allows users to register systems
 //! and run the main tick loop for the server.
 
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use crate::plugin::*;
 use bevy_ecs::{
     error::ErrorHandler, 
     schedule::{IntoScheduleConfigs, Schedule, ScheduleLabel}, 
     system::ScheduleSystem, 
-    world::World
+    world::World,
+    resource::Resource,
 };
+use crate::ecs::resources::ServerTickRate;
 
 /// A label used to identify the main execution schedule.
 #[derive(ScheduleLabel, Clone, Debug, PartialEq, Eq, Hash)]
@@ -30,6 +32,9 @@ pub struct FluxionApp {
 impl Default for FluxionApp {
     /// Creates a default instance of `FluxionApp` with an empty `World` and `MainSchedule`.
     fn default() -> Self {
+        let mut world = World::new();
+        world.insert_resource(ServerTickRate::default());
+
         FluxionApp {
             world: World::new(),
             schedule: Schedule::new(MainSchedule),
@@ -62,14 +67,35 @@ impl FluxionApp {
     pub fn run(&mut self) {
         println!("FluxionApp🚀");
 
+        let tick_rate = self.world
+            .get_resource::<ServerTickRate>()
+            .map(|r| r.0)
+            .unwrap_or(60.0);
+        let target_duration = Duration::from_secs_f64(1.0 / tick_rate);
+
         // Server main loop
         loop {
+            // ループの開始時刻を記録
+            let frame_start = Instant::now();
+
             // Run all systems registered in the schedule
             self.schedule.run(&mut self.world);
 
-            // Prevent CPU maxout, temporarily set to 60Hz
-            std::thread::sleep(Duration::from_millis(16));
+            // 実行にかかった時間を計測
+            let elapsed = frame_start.elapsed();
+
+            // 目標時間よりも早く処理が終わった場合は、残りの時間だけスリープする
+            if elapsed < target_duration {
+                std::thread::sleep(target_duration - elapsed);
+            } else {
+                eprintln!("[Warning] Server is lagging! Tick took {elapsed:?}");
+            }
         }
+    }
+
+    pub fn insert_resource<R: Resource>(&mut self, resource: R) -> &mut Self {
+        self.world.insert_resource(resource);
+        self
     }
 
     #[inline]
