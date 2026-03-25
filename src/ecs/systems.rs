@@ -1,11 +1,13 @@
 use crate::{ecs::events::MessageReceived, network::channels::NetworkEvent};
 use crate::ecs::components::*;
+use bevy_ecs::entity;
 use bevy_ecs::{
     entity::Entity, message::MessageWriter, resource::Resource, 
     system::{Commands, Query, ResMut}
 };
 use tokio::sync::mpsc;
 use tokio_tungstenite::tungstenite::Message;
+use crate::ecs::components::ConnectionMap;
 
 // Resource用のラッパー構造体
 #[derive(Resource)]
@@ -16,20 +18,28 @@ pub fn receive_network_messages_system(
     mut commands: Commands,
     mut ecs_rx: ResMut<NetworkReceiver>,
     mut ev_msg: MessageWriter<MessageReceived>,
-    quert: Query<(Entity, &ClientId)>,
+    // quert: Query<(Entity, &ClientId)>,
+    mut connection_map: ResMut<ConnectionMap>,
 ) {
     while let Ok(event) = ecs_rx.0.try_recv() {
         match event {
             NetworkEvent::Connected { id, sender } => {
-                println!("ECS: 新規接続 {id} をエンティティとして登録します");
+                
+                let entity = commands.spawn((ClientId(id), ClientSender(sender))).id();
+                connection_map.0.insert(id, entity);
+                println!("ECS: 新規接続 {id} -> Entity {entity:?}");
+
                 // クライアントをエンティティとしてWorldに召喚
-                commands.spawn((
-                    ClientId(id),
-                    ClientSender(sender),
-                ));
+                // commands.spawn((
+                //     ClientId(id),
+                //     ClientSender(sender),
+                // ));
             }
             NetworkEvent::Message { id, msg } => {
-                ev_msg.write(MessageReceived { client_id: id, msg });
+                if let Some(&entity) = connection_map.0.get(&id) {
+                    ev_msg.write(MessageReceived { entity, client_id: id, msg });
+                }
+                // ev_msg.write(MessageReceived { client_id: id, msg });
             }
             NetworkEvent::Disconnected { id } => {
                 println!("ECS: {} が切断されました", id);

@@ -8,7 +8,7 @@ repository = "https://github.com/rustyrs/fluxion"
 
 
 [dependencies]
-bevy_ecs = "0.18.1"
+bevy_ecs = { version = "0.18.1", features = ["debug"] }
 futures-util = "0.3.32"
 tokio = { version = "1.50.0", features = ["full"] }
 tokio-tungstenite = "0.29.0"

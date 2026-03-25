@@ -1,8 +1,8 @@
-use bevy_ecs::prelude::Component;
+use bevy_ecs::prelude::*;
 use tokio::sync::mpsc;
 use tokio_tungstenite::tungstenite::Message;
 use std::net::SocketAddr;
-
+use std::collections::HashMap;
 
 /// クライアントを一意に識別するためのIDコンポーネント
 /// 接続時にインクリメントされるカウンターやUUID
@@ -36,3 +36,7 @@ pub struct ClientId(pub SocketAddr);
 // クライアントが所属しているルームを表す
 #[derive(Component, Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Room(pub String);
+
+// SocketAddrからEntityを一発で引くための内部リソース
+#[derive(Resource, Default)]
+pub struct ConnectionMap(pub HashMap<SocketAddr, Entity>);

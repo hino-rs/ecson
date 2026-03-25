@@ -40,6 +40,10 @@ MIT License
 2. 02_broadcast_chat.rs:
     `cargo run --example 02_broadcast_chat`
     A broadcast server that sends received messages to all connected users
+3. 03_room_server.rs:
+    `cargo run --example 03_room_server`
+    Chat server using the room component
+
 
 ## Acknowledgements
 

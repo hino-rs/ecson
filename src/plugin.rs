@@ -2,6 +2,7 @@ use crate::app::{FluxionApp, MainSchedule};
 use crate::ecs::events::MessageReceived;
 use crate::ecs::systems::{NetworkReceiver, receive_network_messages_system};
 use crate::network::channels::NetworkEvent;
+use crate::prelude::ConnectionMap;
 use bevy_ecs::prelude::*;
 use tokio::sync::mpsc;
 use crate::server;
@@ -39,6 +40,7 @@ impl Plugin for FluxionNetworkPlugin {
         // ECSリソースの登録
         app.world.insert_resource(NetworkReceiver(ecs_rx));
         app.world.insert_resource(Messages::<MessageReceived>::default());
+        app.world.insert_resource(ConnectionMap::default());
 
         // 必須システムの登録
         app.add_systems(
@@ -103,10 +105,11 @@ pub struct FluxionCorePlugin {
 
 impl Plugin for FluxionCorePlugin {
     fn build(self, app: &mut FluxionApp) {
+        
         // リソースの登録
         app.world.insert_resource(NetworkReceiver(self.ecs_rx));
-        app.world
-            .insert_resource(Messages::<MessageReceived>::default());
+        app.world.insert_resource(Messages::<MessageReceived>::default());
+
 
         // コアシステムの登録
         app.add_systems(
