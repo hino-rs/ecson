@@ -32,3 +32,7 @@ pub struct ClientSender(pub mpsc::Sender<Message>);
 // エンティティに持たせるクライアントID
 #[derive(Component)]
 pub struct ClientId(pub SocketAddr);
+
+// クライアントが所属しているルームを表す
+#[derive(Component, Clone, Debug, PartialEq, Eq, Hash)]
+pub struct Room(pub String);

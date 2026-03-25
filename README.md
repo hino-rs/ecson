@@ -32,6 +32,15 @@ MIT License
 - tokio
 - tokio-tungstenite
 
+## Examples
+
+1. 01_hello_echo.rs:
+    `cargo run --example 01_hello_echo`
+    A server that returns received messages to their sender
+2. 02_broadcast_chat.rs:
+    `cargo run --example 02_broadcast_chat`
+    A broadcast server that sends received messages to all connected users
+
 ## Acknowledgements
 
 This project is built on top of amazing Rust ecosystem libraries:
