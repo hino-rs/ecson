@@ -1,4 +1,5 @@
-use crate::ecs::events::SendWsMessage;
+use crate::ecs::events::*;
+use crate::network::channels::NetworkPayload;
 use crate::{ecs::events::MessageReceived, network::channels::NetworkEvent};
 use crate::ecs::components::*;
 use bevy_ecs::{
@@ -29,9 +30,9 @@ pub fn receive_network_messages_system(
                 connection_map.0.insert(id, entity);
                 println!("ECS: 新規接続 {id} -> Entity {entity:?}");
             }
-            NetworkEvent::Message { id, msg } => {
+            NetworkEvent::Message { id, payload } => {
                 if let Some(&entity) = connection_map.0.get(&id) {
-                    ev_msg.write(MessageReceived { entity, client_id: id, msg });
+                    ev_msg.write(MessageReceived { entity, client_id: id, payload });
                 }
             }
             NetworkEvent::Disconnected { id } => {
@@ -47,7 +48,7 @@ pub fn send_network_messages_system(
     query: Query<(&ClientId, &ClientSender)>,
 ) {
     for (client_id, sender) in query.iter() {
-        let msg = Message::Text("Hello from ECS Engine".into());
+        let msg = NetworkPayload::Text("Hello from ECS Engine".into());
 
         // try_send を使って非同期待ちを回避
         if let Err(e) = sender.0.try_send(msg) {
@@ -57,12 +58,12 @@ pub fn send_network_messages_system(
 }
 
 pub fn flush_outbound_messages_system(
-    mut outbound_messages: MessageReader<SendWsMessage>,
+    mut outbound_messages: MessageReader<SendMessage>,
     query: Query<&ClientSender>,
 ) {
     for outbound in outbound_messages.read() {
         if let Ok(sender) = query.get(outbound.target) {
-            if let Err(e) = sender.0.try_send(outbound.msg.clone()) {
+            if let Err(e) = sender.0.try_send(outbound.payload.clone()) {
                 eprintln!("{e}");
             }
         } else {

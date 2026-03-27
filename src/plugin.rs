@@ -1,5 +1,5 @@
 use crate::app::{FluxionApp, MainSchedule};
-use crate::ecs::events::{MessageReceived, SendWsMessage};
+use crate::ecs::events::{MessageReceived, SendMessage};
 use crate::ecs::systems::{NetworkReceiver, receive_network_messages_system};
 use crate::network::channels::NetworkEvent;
 use crate::ecs::resources::ConnectionMap;
@@ -50,11 +50,11 @@ impl Plugin for FluxionNetworkPlugin {
         // ECSリソースの登録
         app.world.insert_resource(NetworkReceiver(ecs_rx));
         app.world.insert_resource(Messages::<MessageReceived>::default());
-        app.world.insert_resource(Messages::<SendWsMessage>::default());
+        app.world.insert_resource(Messages::<SendMessage>::default());
         app.world.insert_resource(ConnectionMap::default());
 
         // イベント
-        app.add_event::<SendWsMessage>();
+        app.add_event::<SendMessage>();
 
         // 必須システムの登録
         app.add_systems(
@@ -62,7 +62,7 @@ impl Plugin for FluxionNetworkPlugin {
             (
                         // 古いイベントの破棄
                         |mut msgs: ResMut<Messages<MessageReceived>>| msgs.update(),
-                        |mut msgs: ResMut<Messages<SendWsMessage>>| msgs.update(),
+                        |mut msgs: ResMut<Messages<SendMessage>>| msgs.update(),
 
                         receive_network_messages_system, // 受信イベントの橋渡し
                         flush_outbound_messages_system,

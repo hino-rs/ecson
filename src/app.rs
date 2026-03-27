@@ -2,7 +2,7 @@
 //! and run the main tick loop for the server.
 
 use std::time::{Duration, Instant};
-use bevy_ecs::{event::Event, message::{Message, MessageReader, Messages}};
+use bevy_ecs::{message::{Message, Messages}};
 use crate::plugin::*;
 use bevy_ecs::{
     error::ErrorHandler, 

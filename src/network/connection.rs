@@ -1,4 +1,4 @@
-use crate::network::channels::NetworkEvent;
+use crate::network::channels::*;
 use futures_util::{SinkExt, StreamExt};
 use tokio::net::TcpStream;
 use tokio::sync::mpsc;
@@ -21,7 +21,7 @@ pub async fn handle_connection(
 
     let (mut ws_sender, mut ws_receiver) = ws_stream.split();
 
-    let (client_tx, mut client_rx) = mpsc::channel::<Message>(100);
+    let (client_tx, mut client_rx) = mpsc::channel::<NetworkPayload>(100);
     
     // Connected に conn_id を乗せて送る
     if ecs_tx
@@ -36,21 +36,33 @@ pub async fn handle_connection(
     }
 
     let write_task = tokio::spawn(async move {
-        while let Some(msg) = client_rx.recv().await {
-            if ws_sender.send(msg).await.is_err() {
+        while let Some(payload) = client_rx.recv().await {
+            let ws_msg = match payload {
+                NetworkPayload::Text(t) => Message::Text(t.into()),
+                NetworkPayload::Binary(b) => Message::Binary(b.into()),
+            };
+            if ws_sender.send(ws_msg).await.is_err() {
                 break;
             }
         }
     });
 
     let ecs_tx_clone = ecs_tx.clone();
+    
     let read_task = tokio::spawn(async move {
         while let Some(Ok(msg)) = ws_receiver.next().await {
             if msg.is_close() {
                 break;
             }
+
+            let payload = match msg {
+                Message::Text(t) => NetworkPayload::Text(t.to_string()),
+                Message::Binary(b) => NetworkPayload::Binary(b.into()),
+                _ => continue,
+            };
+
             let _ = ecs_tx_clone
-                .send(NetworkEvent::Message { id: conn_id, msg })
+                .send(NetworkEvent::Message { id: conn_id, payload })
                 .await;
         }
         let _ = ecs_tx_clone

@@ -5,18 +5,25 @@ use std::net::SocketAddr;
 // ECSに送るデータ型
 pub struct ClientMessage {
     pub client_id: SocketAddr,
-    pub msg: Message,
+    pub payload: NetworkPayload,
+}
+
+// 共通ペイロード
+#[derive(Debug, Clone)]
+pub enum NetworkPayload {
+    Text(String),
+    Binary(Vec<u8>),
 }
 
 // ネットワーク層からECSへ送るイベント
 pub enum NetworkEvent {
     Connected {
         id: u64,
-        sender: mpsc::Sender<Message>,
+        sender: mpsc::Sender<NetworkPayload>,
     },
     Message {
         id: u64,
-        msg: Message,
+        payload: NetworkPayload,
     },
     Disconnected {
         id: u64,
