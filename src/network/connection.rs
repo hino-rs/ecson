@@ -1,14 +1,26 @@
+//! 個別のWebSocket接続を処理し、ECSとのメッセージ送受信を仲介するモジュールです。
+
 use crate::network::channels::*;
 use futures_util::{SinkExt, StreamExt};
 use tokio::net::TcpStream;
 use tokio::sync::mpsc;
 use tokio_tungstenite::tungstenite::Message;
 
+/// 個別のWebSocket接続を処理し、ECS側との双方向通信を管理します。
+///
+/// クライアントごとに独立したタスクとして実行され、WebSocketのハンドシェイク確立後、
+/// 読み取り（Read）タスクと書き込み（Write）タスクに分割して非同期処理を行います。
+///
+/// # 引数
+/// * `stream` - 受け入れたTCPストリーム
+/// * `conn_id` - この接続に割り当てられた一意のID
+/// * `ecs_tx` - ECS側へネットワークイベント（接続、切断、メッセージ受信）を送るためのチャンネル
 pub async fn handle_connection(
     stream: TcpStream,
     conn_id: u64,
     ecs_tx: mpsc::Sender<NetworkEvent>,
 ) {
+    // 1. WebSocketハンドシェイクの実行
     let ws_stream = match tokio_tungstenite::accept_async(stream).await {
         Ok(ws) => ws,
         Err(e) => {
@@ -19,11 +31,14 @@ pub async fn handle_connection(
 
     println!("WebSocket connection established for ID {conn_id}");
 
+    // ストリームを送信（Sink）と受信（Stream）に分割
     let (mut ws_sender, mut ws_receiver) = ws_stream.split();
 
+    // ECS側からこの接続に対するメッセージを受け取るための専用チャンネルを作成
     let (client_tx, mut client_rx) = mpsc::channel::<NetworkPayload>(100);
     
-    // Connected に conn_id を乗せて送る
+    // 2. ECSへ「接続完了」イベントを通知
+    // この時、ECS側から返信するための送信チャンネル（client_tx）も一緒に渡す
     if ecs_tx
         .send(NetworkEvent::Connected {
             id: conn_id,
@@ -35,6 +50,8 @@ pub async fn handle_connection(
         return; 
     }
 
+    // 3. 書き込み（Write）タスクの生成
+    // ECSから送られてきたメッセージ（client_rx）を受け取り、WebSocketクライアントへ送信する
     let write_task = tokio::spawn(async move {
         while let Some(payload) = client_rx.recv().await {
             let ws_msg = match payload {
@@ -42,34 +59,41 @@ pub async fn handle_connection(
                 NetworkPayload::Binary(b) => Message::Binary(b.into()),
             };
             if ws_sender.send(ws_msg).await.is_err() {
-                break;
+                break; // 送信エラーが発生したらループを抜けてタスク終了
             }
         }
     });
 
     let ecs_tx_clone = ecs_tx.clone();
     
+    // 4. 読み取り（Read）タスクの生成
+    // WebSocketクライアントからのメッセージを受け取り、ECS（ecs_tx）へ転送する
     let read_task = tokio::spawn(async move {
         while let Some(Ok(msg)) = ws_receiver.next().await {
             if msg.is_close() {
-                break;
+                break; // 切断メッセージを受け取ったらループを抜ける
             }
 
+            // WebSocketのメッセージを内部用のペイロードに変換
             let payload = match msg {
                 Message::Text(t) => NetworkPayload::Text(t.to_string()),
                 Message::Binary(b) => NetworkPayload::Binary(b.into()),
-                _ => continue,
+                _ => continue, // Ping/Pongなどはスキップ
             };
 
+            // ECSへメッセージ受信イベントを送信
             let _ = ecs_tx_clone
                 .send(NetworkEvent::Message { id: conn_id, payload })
                 .await;
         }
+
+        // ループを抜けた（＝切断された）場合、ECSへ「切断」イベントを通知
         let _ = ecs_tx_clone
             .send(NetworkEvent::Disconnected { id: conn_id })
             .await;
     });
 
+    // ReadタスクとWriteタスクの両方が完了（またはエラーで終了）するまで待機
     let _ = tokio::join!(read_task, write_task);
     println!("Connection closed for ID {conn_id}");
 }
