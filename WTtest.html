@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>WebTransport ECS Test</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background-color: #f0f2f5; }
+        .container { max-width: 600px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .control-group { margin-bottom: 15px; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; }
+        input[type="text"] { width: 100%; padding: 8px; box-sizing: border-box; margin-bottom: 5px; }
+        button { padding: 8px 16px; cursor: pointer; background-color: #007bff; color: white; border: none; border-radius: 4px; }
+        button:disabled { background-color: #ccc; cursor: not-allowed; }
+        #log { border: 1px solid #ddd; height: 300px; overflow-y: auto; padding: 10px; background: #fafafa; font-family: monospace; border-radius: 4px; }
+        .log-msg { margin-bottom: 4px; border-bottom: 1px dashed #eee; padding-bottom: 4px;}
+        .sent { color: #0066cc; }
+        .recv { color: #009900; }
+        .err { color: #cc0000; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>WebTransport (Datagram) Test</h2>
+        
+        <div class="control-group">
+            <label>Server URL:</label>
+            <input type="text" id="url" value="https://127.0.0.1:8080">
+        </div>
+
+        <div class="control-group">
+            <label>Certificate Hash (Rustサーバーの出力をペースト):</label>
+            <input type="text" id="hash" placeholder="例: [12, 34, 56, 78...]">
+            <span style="font-size: 0.8em; color: #666;">※自己署名証明書をブラウザに許可させるためのハッシュ値です。</span>
+        </div>
+
+        <div class="control-group">
+            <button id="connectBtn">Connect</button>
+            <button id="disconnectBtn" disabled>Disconnect</button>
+        </div>
+
+        <div class="control-group">
+            <label>Message (Datagram):</label>
+            <div style="display: flex; gap: 10px;">
+                <input type="text" id="msgInput" placeholder="ECSサーバーに送るメッセージ" disabled>
+                <button id="sendBtn" disabled>Send</button>
+            </div>
+        </div>
+
+        <label>Log:</label>
+        <div id="log"></div>
+    </div>
+
+    <script>
+        let transport = null;
+        const logDiv = document.getElementById('log');
+
+        function writeLog(message, type = '') {
+            const div = document.createElement('div');
+            div.className = `log-msg ${type}`;
+            div.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logDiv.appendChild(div);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        // Rustが出力した "[12, 34, 56...]" という文字列を Uint8Array に変換するヘルパー
+        function parseHashArray(hashStr) {
+            if (!hashStr.trim()) return null;
+            try {
+                const cleanStr = hashStr.replace(/\[|\]/g, '');
+                const numArr = cleanStr.split(',').map(s => parseInt(s.trim(), 10)).filter(n => !isNaN(n));
+                if (numArr.length === 32) {
+                    return new Uint8Array(numArr);
+                } else {
+                    writeLog(`ハッシュの長さが32バイトではありません (${numArr.length} bytes)`, 'err');
+                }
+            } catch(e) {
+                writeLog("ハッシュの解析に失敗しました", 'err');
+            }
+            return null;
+        }
+
+        document.getElementById('connectBtn').onclick = async () => {
+            const url = document.getElementById('url').value;
+            const hashStr = document.getElementById('hash').value;
+            const hashBytes = parseHashArray(hashStr);
+
+            let options = {};
+            if (hashBytes) {
+                // ここでブラウザにオレオレ証明書を許可させます
+                options.serverCertificateHashes = [{ algorithm: "sha-256", value: hashBytes }];
+            }
+
+            try {
+                writeLog(`Connecting to ${url}...`);
+                transport = new WebTransport(url, options);
+
+                await transport.ready;
+                writeLog('✅ WebTransport Connected!', 'recv');
+
+                document.getElementById('connectBtn').disabled = true;
+                document.getElementById('disconnectBtn').disabled = false;
+                document.getElementById('msgInput').disabled = false;
+                document.getElementById('sendBtn').disabled = false;
+
+                // データグラムの受信ループを開始
+                receiveDatagrams();
+
+            } catch (e) {
+                writeLog(`❌ Connection failed: ${e}`, 'err');
+            }
+        };
+
+        // ECSからのデータグラムを受信するループ
+        async function receiveDatagrams() {
+            try {
+                const reader = transport.datagrams.readable.getReader();
+                const decoder = new TextDecoder();
+                while (true) {
+                    const { value, done } = await reader.read();
+                    if (done) break;
+                    
+                    const text = decoder.decode(value);
+                    writeLog(`📥 受信: ${text}`, 'recv');
+                }
+            } catch (e) {
+                writeLog(`❌ 受信エラー: ${e}`, 'err');
+            }
+        }
+
+        // ECSへデータグラムを送信する
+        document.getElementById('sendBtn').onclick = async () => {
+            const input = document.getElementById('msgInput');
+            const text = input.value;
+            if (!transport || !text) return;
+
+            try {
+                const encoder = new TextEncoder();
+                const data = encoder.encode(text);
+                
+                const writer = transport.datagrams.writable.getWriter();
+                await writer.write(data);
+                writer.releaseLock(); // 使い終わったらロックを解放する
+                
+                writeLog(`📤 送信: ${text}`, 'sent');
+                input.value = '';
+            } catch (e) {
+                writeLog(`❌ 送信エラー: ${e}`, 'err');
+            }
+        };
+
+        document.getElementById('disconnectBtn').onclick = () => {
+            if (transport) {
+                transport.close();
+                writeLog('🔌 Disconnected.');
+                document.getElementById('connectBtn').disabled = false;
+                document.getElementById('disconnectBtn').disabled = true;
+                document.getElementById('msgInput').disabled = true;
+                document.getElementById('sendBtn').disabled = true;
+                transport = null;
+            }
+        };
+    </script>
+</body>
+</html>

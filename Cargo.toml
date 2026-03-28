@@ -1,6 +1,6 @@
 [package]
 name = "fluxion"
-version = "0.0.2"
+version = "0.0.3"
 edition = "2024"
 description = "ECS based Web framework"
 license = "MIT"
@@ -12,3 +12,4 @@ bevy_ecs = { version = "0.18.1", features = ["debug"] }
 futures-util = "0.3.32"
 tokio = { version = "1.50.0", features = ["full"] }
 tokio-tungstenite = "0.29.0"
+wtransport = { version = "0.7.0", features = ["self-signed"] }

@@ -7,7 +7,7 @@ use tokio_tungstenite::tungstenite::Message as WsMessage;
 fn room_chat_system(
     mut commands: Commands,
     mut messages: MessageReader<MessageReceived>,
-    mut outbound: MessageWriter<SendWsMessage>,
+    mut outbound: MessageWriter<SendMessage>,
     // 1つ目のクエリ: イベントの送信元（Entity）を特定するため
     sender_query: Query<(&ClientId, Option<&Room>)>,
     // 2つ目のクエリ: メッセージの送信先（宛先）を探すため
@@ -22,12 +22,14 @@ fn room_chat_system(
         // get() を使って一発でコンポーネントを取得
         let Ok((sender_id, current_room)) = sender_query.get(event.entity) else {
             // エンティティがすでに存在しない場合はスキップ
-            continue; 
+            continue;
         };
 
         if text.starts_with("/join ") {
             let room_name = text.trim_start_matches("/join ").to_string();
-            commands.entity(event.entity).insert(Room(room_name.clone()));
+            commands
+                .entity(event.entity)
+                .insert(Room(room_name.clone()));
             println!("{} joined room: {}", sender_id.0, room_name);
             continue;
         }
@@ -47,8 +49,8 @@ fn room_chat_system(
             for (target_entity, target_room) in target_query.iter() {
                 // 送信元のRoomと同じRoomの人にだけ送る
                 if target_room.0 == room.0 {
-                    outbound.write(SendWsMessage { 
-                        target: target_entity, 
+                    outbound.write(SendMessage {
+                        target: target_entity,
                         msg: broadcast_msg.clone(),
                     });
                 }
@@ -58,11 +60,11 @@ fn room_chat_system(
             let warn_msg =
                 WsMessage::Text("You are not in any room. Type '/join <room_name>'".into());
 
-            outbound.write(SendWsMessage { 
-                target: event.entity, 
-                msg: warn_msg, 
+            outbound.write(SendMessage {
+                target: event.entity,
+                msg: warn_msg,
             });
-            
+
             println!("{} is not in a room, message ignored.", sender_id.0);
         }
     }

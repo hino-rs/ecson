@@ -6,7 +6,6 @@ use crate::ecs::resources::ConnectionMap;
 use crate::prelude::flush_outbound_messages_system;
 use bevy_ecs::prelude::*;
 use tokio::sync::mpsc;
-use crate::server;
 
 
 #[derive(PartialEq, Eq, Debug, Clone, Copy, PartialOrd, Ord)]
@@ -18,11 +17,11 @@ pub enum PluginsState {
 }
 
 /// Tokioランタイムの起動からECSとのブリッジ構築までを隠蔽するプラグイン
-pub struct FluxionNetworkPlugin {
+pub struct FluxionWebSocketPlugin {
     pub address: String,
 }
 
-impl FluxionNetworkPlugin {
+impl FluxionWebSocketPlugin {
     /// 起動するアドレス(例: "127.0.0.1:8080")を指定してプラグイン生成
     pub fn new(address: impl Into<String>) -> Self {
         Self {
@@ -31,8 +30,10 @@ impl FluxionNetworkPlugin {
     }
 }
 
-impl Plugin for FluxionNetworkPlugin {
+impl Plugin for FluxionWebSocketPlugin {
     fn build(self, app: &mut FluxionApp) {
+        setup_network_ecs(app);
+
         // TokioとECSを繋ぐMPSCチャンネルを作成
         let (ecs_tx, ecs_rx) = mpsc::channel::<NetworkEvent>(1024);
 
@@ -41,11 +42,12 @@ impl Plugin for FluxionNetworkPlugin {
         std::thread::spawn(move || {
             let rt = tokio::runtime::Runtime::new().unwrap();
             rt.block_on(async {
-                if let Err(e) = server::run(&addr, ecs_tx).await {
+                if let Err(e) = crate::server::run(&addr, ecs_tx).await {
                     eprintln!("Fluxion Server Error: {e}");
                 }
             });
         });
+
 
         // ECSリソースの登録
         app.world.insert_resource(NetworkReceiver(ecs_rx));
@@ -57,18 +59,30 @@ impl Plugin for FluxionNetworkPlugin {
         app.add_event::<SendMessage>();
 
         // 必須システムの登録
-        app.add_systems(
-            MainSchedule,
-            (
-                        // 古いイベントの破棄
-                        |mut msgs: ResMut<Messages<MessageReceived>>| msgs.update(),
-                        |mut msgs: ResMut<Messages<SendMessage>>| msgs.update(),
+        // app.add_systems(
+        //     MainSchedule,
+        //     (
+        //                 // 古いイベントの破棄
+        //                 |mut msgs: ResMut<Messages<MessageReceived>>| msgs.update(),
+        //                 |mut msgs: ResMut<Messages<SendMessage>>| msgs.update(),
 
-                        receive_network_messages_system, // 受信イベントの橋渡し
-                        flush_outbound_messages_system,
+        //                 receive_network_messages_system, // 受信イベントの橋渡し
+        //                 flush_outbound_messages_system,
                                                   
-            )
-        );
+        //     )
+        // );
+    }
+}
+
+
+// WebTransport用プラグイン
+pub struct FluxionWebTransportPlugin {
+    pub address: String,
+}
+
+impl FluxionWebTransportPlugin {
+    pub fn new(address: impl Into<String>) -> Self {
+        Self { address: address.into() }
     }
 }
 
@@ -108,3 +122,48 @@ impl_plugins_for_tuples!(P1, P2, P3);
 impl_plugins_for_tuples!(P1, P2, P3, P4);
 impl_plugins_for_tuples!(P1, P2, P3, P4, P5);
 impl_plugins_for_tuples!(P1, P2, P3, P4, P5, P6);
+
+// --------------------------------------------------------
+// 共通のECSリソース・システム登録処理
+// （どちらのプラグインを使っても、ECS側の準備は同じにする）
+// --------------------------------------------------------
+fn setup_network_ecs(app: &mut FluxionApp) {
+    if app.world.contains_resource::<ConnectionMap>() {
+        return;
+    }
+
+    app.world.insert_resource(Messages::<MessageReceived>::default());
+    app.world.insert_resource(Messages::<SendMessage>::default());
+    app.world.insert_resource(ConnectionMap::default());
+    app.add_event::<SendMessage>();
+
+    app.add_systems(
+        MainSchedule,
+        (
+            |mut msgs: ResMut<Messages<MessageReceived>>| msgs.update(),
+            |mut msgs: ResMut<Messages<SendMessage>>| msgs.update(),
+            crate::ecs::systems::receive_network_messages_system,
+            crate::ecs::systems::flush_outbound_messages_system,
+        )
+    );
+}
+
+impl Plugin for FluxionWebTransportPlugin {
+    fn build(self, app: &mut FluxionApp) {
+        setup_network_ecs(app); // 共通のECSセットアップ
+
+        let (ecs_tx, ecs_rx) = mpsc::channel::<NetworkEvent>(1024);
+        app.world.insert_resource(NetworkReceiver(ecs_rx));
+
+        let addr = self.address.clone();
+        std::thread::spawn(move || {
+            let rt = tokio::runtime::Runtime::new().unwrap();
+            rt.block_on(async {
+                // 新しいWebTransportサーバーを起動
+                if let Err(e) = crate::network::wt_server::run(&addr, ecs_tx).await {
+                    eprintln!("WebTransport Server Error: {e}");
+                }
+            });
+        });
+    }
+}

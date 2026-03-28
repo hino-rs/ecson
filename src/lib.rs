@@ -17,7 +17,9 @@ pub mod prelude {
     pub use crate::ecs::events::MessageReceived;
     pub use crate::ecs::systems::*;
     pub use crate::network::channels::NetworkEvent;
-    pub use crate::ecs::events::SendWsMessage;
+    pub use crate::ecs::events::SendMessage;
 
-    pub use crate::plugin::FluxionNetworkPlugin;
+
+    pub use crate::plugin::FluxionWebSocketPlugin;
+    pub use crate::plugin::FluxionWebTransportPlugin;
 }

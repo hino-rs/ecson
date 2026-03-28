@@ -5,16 +5,15 @@ use fluxion::prelude::*;
 // 1. システム定義
 fn echo_system(
     mut messages: MessageReader<MessageReceived>,
-    mut outbound: MessageWriter<SendWsMessage>,
+    mut outbound: MessageWriter<SendMessage>,
 ) {
     for message in messages.read() {
-        outbound.write(SendWsMessage {
+        outbound.write(SendMessage {
             target: message.entity,
-            msg: message.msg.clone(),
+            payload: message.payload.clone(),
         });
     }
 }
-
 
 fn main() {
     // 2. FluxionAppを初期化
@@ -22,10 +21,12 @@ fn main() {
 
     // 3. FluxionAppにプラグインを追加
     // FluxionNetworkPluginでサーバーの初期化を行います
-    app.add_plugins(FluxionNetworkPlugin::new("127.0.0.1:8080")) // コア機能
+    // app.add_plugins(FluxionNetworkPlugin::new("127.0.0.1:8080")) // コア機能
+    //     .add_systems(MainSchedule, echo_system);
+
+    app.add_plugins(FluxionWebTransportPlugin::new("127.0.0.1:8080"))
         .add_systems(MainSchedule, echo_system);
 
     // 4. 実行
     app.run();
 }
-
