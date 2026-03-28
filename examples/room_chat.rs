@@ -118,13 +118,24 @@ fn parse_chat_messages_system(
         let text = text.trim();
 
         if let Some(room_name) = text.strip_prefix("/join ") {
-            let room_name = room_name.trim().to_string();
             ev_command.write(ChatCommand::JoinRoom { 
                 entity: msg.entity, 
-                room_name 
+                room_name: room_name.trim().to_string() 
+            });
+        } else if let Some(name) = text.strip_prefix("/nick ") {
+            // /nick コマンドの解析
+            ev_command.write(ChatCommand::Nick {
+                entity: msg.entity,
+                name: name.trim().to_string()
+            });
+        } else if text.starts_with('/') {
+            // 未知のコマンドに対するエラーハンドリング
+            ev_command.write(ChatCommand::Error {
+                entity: msg.entity,
+                message: format!("Unknown command: {}", text.split_whitespace().next().unwrap_or(text)),
             });
         } else {
-            // コマンドでない場合は通常のブロードキャストとして処理
+            // 通常のチャット
             ev_command.write(ChatCommand::Broadcast { 
                 entity: msg.entity, 
                 text: text.to_string() 
@@ -166,15 +177,22 @@ fn handle_join_room_system(
 fn handle_broadcast_system(
     mut ev_command: MessageReader<ChatCommand>,
     mut ev_send: MessageWriter<SendMessage>,
-    client_query: Query<(&ClientId, Option<&Room>)>,
+    // Queryに Option<&Username> を追加
+    client_query: Query<(&ClientId, Option<&Username>, Option<&Room>)>,
     room_map: Res<RoomMap>,
 ) {
     for command in ev_command.read() {
         if let ChatCommand::Broadcast { entity, text } = command {
-            let Ok((client_id, current_room)) = client_query.get(*entity) else { continue };
+            let Ok((client_id, username, current_room)) = client_query.get(*entity) else { continue };
 
             if let Some(room) = current_room {
-                let broadcast_text = format!("User {}: {}", client_id.0, text);
+                // 名前が設定されていればそれを、なければ "User [ID]" を表示名にする
+                let display_name = match username {
+                    Some(u) => u.0.clone(),
+                    None => format!("User {}", client_id.0),
+                };
+                
+                let broadcast_text = format!("{}: {}", display_name, text);
                 
                 if let Some(members) = room_map.0.get(&room.0) {
                     for &target_entity in members {
@@ -194,6 +212,40 @@ fn handle_broadcast_system(
     }
 }
 
+fn handle_nick_system(
+    mut commands: Commands,
+    mut ev_command: MessageReader<ChatCommand>,
+    mut ev_send: MessageWriter<SendMessage>,
+) {
+    for command in ev_command.read() {
+        if let ChatCommand::Nick { entity, name } = command {
+            // Usernameコンポーネントをエンティティに付与（すでにあれば上書き）
+            commands.entity(*entity).insert(Username(name.clone()));
+            
+            // 本人に成功メッセージを返す
+            ev_send.write(SendMessage {
+                target: *entity,
+                payload: NetworkPayload::Text(format!("[System] Your nickname is now: {}", name)),
+            });
+        }
+    }
+}
+
+fn handle_error_system(
+    mut ev_command: MessageReader<ChatCommand>,
+    mut ev_send: MessageWriter<SendMessage>,
+) {
+    for command in ev_command.read() {
+        if let ChatCommand::Error { entity, message } = command {
+            // エラー原因を本人にだけシステムメッセージとして返す
+            ev_send.write(SendMessage {
+                target: *entity,
+                payload: NetworkPayload::Text(format!("[Error] {}", message)),
+            });
+        }
+    }
+}
+
 fn main() {
     FluxionApp::new()
         .add_event::<ChatCommand>()
@@ -204,6 +256,8 @@ fn main() {
     (
             parse_chat_messages_system,
             handle_join_room_system,
+            handle_nick_system,
+            handle_error_system,
             handle_broadcast_system,
             handle_disconnections_system,
         ),

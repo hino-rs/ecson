@@ -14,3 +14,5 @@ pub struct ClientId(pub u64);
 #[derive(Component, Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Room(pub String);
 
+#[derive(Component)]
+pub struct Username(pub String);
