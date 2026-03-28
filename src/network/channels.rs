@@ -1,5 +1,4 @@
 use tokio::sync::mpsc;
-use tokio_tungstenite::tungstenite::Message;
 use std::net::SocketAddr;
 
 // ECSに送るデータ型

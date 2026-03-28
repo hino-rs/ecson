@@ -1,5 +1,4 @@
 use bevy_ecs::{entity::Entity, event::Event};
-use tokio_tungstenite::tungstenite::Message as WsMessage;
 use bevy_ecs::message::Message;
 use crate::network::channels::NetworkPayload;
 
@@ -21,4 +20,10 @@ pub struct SendMessage {
 #[derive(Message)]
 pub struct BroadcastMessage {
     pub msg: NetworkPayload,
+}
+
+#[derive(Event, Message)]
+pub struct UserDisconnected {
+    pub entity: Entity,
+    pub client_id: u64,
 }

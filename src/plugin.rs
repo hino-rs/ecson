@@ -1,9 +1,9 @@
+use crate::ecs::events::UserDisconnected;
 use crate::app::{FluxionApp, MainSchedule};
 use crate::ecs::events::{MessageReceived, SendMessage};
-use crate::ecs::systems::{NetworkReceiver, receive_network_messages_system};
+use crate::ecs::systems::NetworkReceiver;
 use crate::network::channels::NetworkEvent;
 use crate::ecs::resources::ConnectionMap;
-use crate::prelude::flush_outbound_messages_system;
 use bevy_ecs::prelude::*;
 use tokio::sync::mpsc;
 
@@ -122,12 +122,14 @@ fn setup_network_ecs(app: &mut FluxionApp) {
     app.world.insert_resource(Messages::<SendMessage>::default());
     app.world.insert_resource(ConnectionMap::default());
     app.add_event::<SendMessage>();
+    app.add_event::<UserDisconnected>();
 
     app.add_systems(
         MainSchedule,
         (
             |mut msgs: ResMut<Messages<MessageReceived>>| msgs.update(),
             |mut msgs: ResMut<Messages<SendMessage>>| msgs.update(),
+            |mut msgs: ResMut<Messages<UserDisconnected>>| msgs.update(),
             crate::ecs::systems::receive_network_messages_system,
             crate::ecs::systems::flush_outbound_messages_system,
         )

@@ -9,7 +9,7 @@ static NEXT_CONNECTION_ID: AtomicU64 = AtomicU64::new(1);
 
 pub async fn run(addr: &str, ecs_tx: mpsc::Sender<NetworkEvent>) -> Result<(), Box<dyn std::error::Error>> {
     // ローカル開発用
-    let identity = Identity::self_signed(&["localhost", "127.0.0.1", "::1"]).unwrap();
+    let identity = Identity::self_signed(["localhost", "127.0.0.1", "::1"]).unwrap();
 
     println!("{:?}", identity.certificate_chain().as_slice()[0].hash().fmt(wtransport::tls::Sha256DigestFmt::BytesArray));
 

@@ -7,7 +7,6 @@ use bevy_ecs::{
     system::{Commands, Query, ResMut}
 };
 use tokio::sync::mpsc;
-use tokio_tungstenite::tungstenite::Message;
 use crate::ecs::resources::ConnectionMap;
 use bevy_ecs::message::MessageReader;
 
@@ -20,7 +19,7 @@ pub fn receive_network_messages_system(
     mut commands: Commands,
     mut ecs_rx: ResMut<NetworkReceiver>,
     mut ev_msg: MessageWriter<MessageReceived>,
-    // quert: Query<(Entity, &ClientId)>,
+    mut ev_disconnect: MessageWriter<UserDisconnected>,
     mut connection_map: ResMut<ConnectionMap>,
 ) {
     while let Ok(event) = ecs_rx.0.try_recv() {
@@ -37,7 +36,9 @@ pub fn receive_network_messages_system(
             }
             NetworkEvent::Disconnected { id } => {
                 println!("ECS: {} が切断されました", id);
-                // （本当はここでエンティティをDespawnして削除する処理を書く）
+                if let Some(entity) = connection_map.0.remove(&id) {
+                    ev_disconnect.write(UserDisconnected { entity, client_id: id });
+                }
             }
         }
     }

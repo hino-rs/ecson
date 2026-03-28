@@ -2,6 +2,40 @@
 
 use fluxion::prelude::*;
 
+fn handle_disconnections_system(
+    mut commands: Commands,
+    mut ev_disconnected: MessageReader<UserDisconnected>,
+    mut ev_send: MessageWriter<SendMessage>,
+    client_query: Query<&Room>,
+    room_query: Query<(Entity, &Room)>,
+) {
+    for disconnect in ev_disconnected.read() {
+        let entity = disconnect.entity;
+        let client_id = disconnect.client_id;
+
+        // 対象のエンティティがルームに所属していたか確認
+        if let Ok(room) = client_query.get(entity) {
+            let msg = format!("[System] User {} has left the room.", client_id);
+            
+            // 同じルームの他のユーザーに退室メッセージをブロードキャスト
+            for (target_entity, target_room) in room_query.iter() {
+                if target_room.0 == room.0 && target_entity != entity {
+                    ev_send.write(SendMessage {
+                        target: target_entity,
+                        payload: NetworkPayload::Text(msg.clone()),
+                    });
+                }
+            }
+        }
+
+        // 最後にエンティティを完全に削除（クリーンアップ）
+        if let Ok(mut entity_commands) = commands.get_entity(entity) {
+            entity_commands.despawn();
+            println!("Cleaned up entity for client {}", client_id);
+        }
+    }
+}
+
 fn chat_server_system(
     mut commands: Commands,
     mut ev_received: MessageReader<MessageReceived>,
@@ -69,6 +103,6 @@ fn chat_server_system(
 fn main() {
     FluxionApp::new()
         .add_plugins(FluxionWebSocketPlugin::new("127.0.0.1:8080"))
-        .add_systems(MainSchedule, chat_server_system)
+        .add_systems(MainSchedule, (chat_server_system, handle_disconnections_system))
         .run()
 }

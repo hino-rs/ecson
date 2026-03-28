@@ -14,7 +14,7 @@ pub mod prelude {
 
     pub use crate::app::{FluxionApp, MainSchedule};
     pub use crate::ecs::components::*;
-    pub use crate::ecs::events::MessageReceived;
+    pub use crate::ecs::events::*;
     pub use crate::ecs::systems::*;
     pub use crate::network::channels::NetworkEvent;
     pub use crate::ecs::events::SendMessage;
