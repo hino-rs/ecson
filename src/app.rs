@@ -13,6 +13,7 @@ use bevy_ecs::{
 };
 use crate::ecs::resources::ServerTickRate;
 
+
 /// メインの実行スケジュールを識別するためのラベル。
 #[derive(ScheduleLabel, Clone, Debug, PartialEq, Eq, Hash)]
 pub struct MainSchedule;

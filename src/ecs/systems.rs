@@ -11,6 +11,7 @@ use bevy_ecs::{
 use tokio::sync::mpsc;
 use crate::ecs::resources::ConnectionMap;
 use bevy_ecs::message::MessageReader;
+use crate::ecs::resources::RoomMap;
 
 /// Tokio側から送られてくるネットワークイベントを受信するためのリソースラッパー。
 #[derive(Resource)]
@@ -48,6 +49,7 @@ pub fn receive_network_messages_system(
                 // エンティティの特定とマップからの削除を同時に行い、切断イベントを発行
                 if let Some(entity) = connection_map.0.remove(&id) {
                     ev_disconnect.write(UserDisconnected { entity, client_id: id });
+                    commands.entity(entity).despawn();
                 }
             }
         }
@@ -84,6 +86,30 @@ pub fn flush_outbound_messages_system(
         } else {
             // 切断直後など、宛先エンティティが既に存在しない場合
             eprintln!("Destination Entity {:?} does not exist anymore", outbound.target);
+        }
+    }
+}
+
+/// ユーザー切断時に、所属していたルーム（RoomMap）からエンティティを安全に取り除くシステム
+pub fn cleanup_disconnected_users_system(
+    mut ev_disconnect: MessageReader<UserDisconnected>,
+    mut room_map: ResMut<RoomMap>,
+    query: Query<&Room>, // どのルームに所属していたかを確認するためのクエリ
+) {
+    for event in ev_disconnect.read() {
+        // 切断されたエンティティがRoomコンポーネントを持っていたか確認
+        if let Ok(room) = query.get(event.entity) {
+            // RoomMapからそのエンティティを削除
+            if let Some(entities_in_room) = room_map.0.get_mut(&room.0) {
+                entities_in_room.remove(&event.entity);
+                println!("ECS: クライアント {} をルーム '{}' から削除しました", event.client_id, room.0);
+                
+                // もしルームが空になったら、ルーム自体を消す（任意）
+                if entities_in_room.is_empty() {
+                    room_map.0.remove(&room.0);
+                    println!("ECS: ルーム '{}' が空になったため削除しました", room.0);
+                }
+            }
         }
     }
 }

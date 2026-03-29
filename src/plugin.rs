@@ -119,6 +119,7 @@ fn setup_network_ecs(app: &mut FluxionApp) {
             |mut msgs: ResMut<Messages<UserDisconnected>>| msgs.update(),
             crate::ecs::systems::receive_network_messages_system,
             crate::ecs::systems::flush_outbound_messages_system,
+            crate::ecs::systems::cleanup_disconnected_users_system, // あとで任意化
         )
     );
 }
