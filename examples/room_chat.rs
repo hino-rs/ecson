@@ -14,7 +14,7 @@ fn log_joins_to_console_system(
 fn main() {
     FluxionApp::new()
         .add_plugins(FluxionWebSocketPlugin::new("127.0.0.1:8080"))
-        .add_plugins(ChatServerPlugin)
+        .add_plugins((ChatCorePlugin, ChatRoomPlugin))
         .add_systems(Update, log_joins_to_console_system)
         .run()
 }

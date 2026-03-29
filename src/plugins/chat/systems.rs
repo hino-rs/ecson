@@ -1,63 +1,12 @@
+use std::thread::current;
+
 use bevy_ecs::prelude::*;
+use tokio_tungstenite::tungstenite::client;
 use crate::prelude::*;
-
-// ============================================================================
-// 1. ユーザー（アプリ開発者）に公開するフック用イベント
-// ============================================================================
-
-/// ユーザーがチャットルームに参加した時に発火するイベント
-#[derive(Event, Message)]
-pub struct UserJoinedRoomEvent {
-    pub client_id: u64,
-    pub room_name: String,
-}
-
-/// ユーザーがメッセージを送信（ブロードキャスト）した時に発火するイベント
-#[derive(Event, Message)]
-pub struct ChatMessageBroadcastedEvent {
-    pub client_id: u64,
-    pub room_name: Option<String>,
-    pub text: String,
-}
-
-// ============================================================================
-// 2. プラグインの定義
-// ============================================================================
-
-pub struct ChatServerPlugin;
-
-impl Plugin for ChatServerPlugin {
-    fn build(self, app: &mut FluxionApp) {
-        // リソースの初期化
-        app.world.insert_resource(RoomMap::default());
-        
-        // 内部イベントとフックイベントの登録
-        app.add_event::<ChatCommand>();
-        app.add_event::<UserJoinedRoomEvent>(); // ユーザー向けフック
-        app.add_event::<ChatMessageBroadcastedEvent>(); // ユーザー向けフック
-
-        // ボイラープレートだったシステム群をすべてエンジン側で登録！
-        app.add_systems(Update, parse_chat_messages_system);
-        app.add_systems(
-            FixedUpdate,
-            (
-                handle_join_room_system,
-                handle_nick_system,
-                handle_list_rooms_system,
-                handle_error_system,
-                handle_broadcast_system,
-                handle_disconnections_system, // エンジン側が提供するRoomクリーンアップなど
-            ),
-        );
-    }
-}
-
-// ============================================================================
-// 3. システムの実装（隠蔽）
-// ============================================================================
+use crate::plugins::chat::UserJoinedRoomEvent;
 
 /// 受信したテキストメッセージを解析し、適切な ChatCommand イベントを発行するシステム
-fn parse_chat_messages_system(
+pub fn parse_chat_messages_system(
     mut ev_received: MessageReader<MessageReceived>,
     mut ev_command: MessageWriter<ChatCommand>,
 ) {
@@ -82,16 +31,17 @@ fn parse_chat_messages_system(
     }
 }
 
-fn handle_join_room_system(
+pub fn handle_join_room_system(
     mut commands: Commands,
     mut ev_command: MessageReader<ChatCommand>,
     mut ev_send: MessageWriter<SendMessage>,
-    client_query: Query<Option<&Room>>,
+    mut ev_hook_joined: MessageWriter<UserJoinedRoomEvent>,
+    client_query: Query<(&ClientId, Option<&Room>)>,
     mut room_map: ResMut<RoomMap>,
 ) {
     for command in ev_command.read() {
         let ChatCommand::JoinRoom { entity, room_name } = command else { continue };
-        let Ok(current_room_opt) = client_query.get(*entity) else { continue };
+        let Ok((client_id, current_room_opt)) = client_query.get(*entity) else { continue };
 
         // 古いルームからの離脱処理
         if let Some(old_room) = current_room_opt
@@ -107,10 +57,15 @@ fn handle_join_room_system(
             target: *entity,
             payload: NetworkPayload::Text(format!("[System] Joined room: {room_name}")),
         });
+
+        ev_hook_joined.write(UserJoinedRoomEvent {
+            client_id: client_id.0,
+            room_name: room_name.clone(),
+        });
     }
 }
 
-fn handle_list_rooms_system(
+pub fn handle_list_rooms_system(
     mut ev_command: MessageReader<ChatCommand>,
     mut ev_send: MessageWriter<SendMessage>,
     room_map: Res<RoomMap>,
@@ -137,7 +92,7 @@ fn handle_list_rooms_system(
     }
 }
 
-fn handle_error_system(
+pub fn handle_error_system(
     mut ev_command: MessageReader<ChatCommand>,
     mut ev_send: MessageWriter<SendMessage>,
 ) {
@@ -150,7 +105,7 @@ fn handle_error_system(
     }
 }
 
-fn handle_nick_system(
+pub fn handle_nick_system(
     mut commands: Commands,
     mut ev_command: MessageReader<ChatCommand>,
     mut ev_send: MessageWriter<SendMessage>,
@@ -166,23 +121,28 @@ fn handle_nick_system(
     }
 }
 
-fn handle_broadcast_system(
+/// チャットの送信を処理するシステム。
+/// RoomMapリソースが存在するかどうか（ChatRoomPluginが読み込まれているか）で挙動が自動的に変わります。
+pub fn handle_broadcast_system(
     mut ev_command: MessageReader<ChatCommand>,
     mut ev_send: MessageWriter<SendMessage>,
-    client_query: Query<(&ClientId, Option<&Username>, Option<&Room>)>,
-    room_map: Res<RoomMap>,
+    // 自身の情報（ルームに入っていればRoomコンポーネントが取れる）
+    client_query: Query<(Entity, &ClientId, Option<&Username>, Option<&Room>)>,
+    // 送信先一覧を取得するためのクエリ（全員）
+    all_clients_query: Query<Entity, With<ClientId>>,
+    room_map_opt: Option<Res<RoomMap>>, 
 ) {
     for command in ev_command.read() {
         let ChatCommand::Broadcast { entity, text } = command else { continue };
-        let Ok((client_id, username, current_room)) = client_query.get(*entity) else { continue };
+        let Ok((_, client_id, username, current_room)) = client_query.get(*entity) else { continue };
 
-        if let Some(room) = current_room {
-            let display_name = username
-                .map(|u| u.0.clone())
-                .unwrap_or_else(|| format!("User {}", client_id.0));
-            
-            let broadcast_text = format!("{display_name}: {text}");
+        let display_name = username
+            .map(|u| u.0.clone())
+            .unwrap_or_else(|| format!("User {}", client_id.0));
+        let broadcast_text = format!("{display_name}: {text}");
 
+        // ルームプラグインが有効 ＆ ユーザーがルームに所属している場合
+        if let (Some(room_map), Some(room)) = (&room_map_opt, current_room) {
             if let Some(members) = room_map.0.get(&room.0) {
                 for &target_entity in members {
                     ev_send.write(SendMessage {
@@ -191,17 +151,21 @@ fn handle_broadcast_system(
                     });
                 }
             }
-        } else {
-            ev_send.write(SendMessage {
-                target: *entity,
-                payload: NetworkPayload::Text("[System] You are not in a room. Type '/join <room_name>' first.".into()),
-            });
+        } 
+        // ルームプラグインが無効、またはユーザーがルームに入っていない場合（全体チャット）
+        else {
+            for target_entity in all_clients_query.iter() {
+                ev_send.write(SendMessage {
+                    target: target_entity,
+                    payload: NetworkPayload::Text(broadcast_text.clone()),
+                });
+            }
         }
     }
 }
 
 
-fn handle_disconnections_system(
+pub fn handle_disconnections_system(
     mut ev_disconnected: MessageReader<UserDisconnected>,
     mut ev_send: MessageWriter<SendMessage>,
     client_query: Query<&Room>,
