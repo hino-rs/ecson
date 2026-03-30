@@ -23,7 +23,7 @@ jobs:
 
       - name: Build book
         run: |
-          mdbook build
+          mdbook build docs/tutorial-ja
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

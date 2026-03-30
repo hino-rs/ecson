@@ -2,7 +2,7 @@
 
 エコーサーバーは素早く直感的に作ることができます。
 
-## システムを定義
+## システムを定義する
 
 ```Rust
 // 頻繁に使用されるものが詰まってます
@@ -21,13 +21,41 @@ fn echo_system(
 }
 ```
 
-引数を見てみましょう。
+### 引数
 
 1. `mut messages: MessageReader<MessageReceived>`:<br>
   受け取ったメッセージ(`MessageReceived`)を読み取ります(`MessageReader`)。<br>
   `MessageReader`は内部にカーソルを持つことで「どこまで読んだか」を更新するため、`mut`を付けましょう。
 2. `mut outbound: MessageWriter<SendMessage>`:<br>
   送るメッセージ(`SendMessage`)を書き込みます(`MessageWriter`)。
+
+### ロジック
+
+```Rust
+for message in messages.read() {
+
+}
+```
+
+`ev_received`は`MessageReader`なので`.read()`が使えます。`.read()`は、`Messages`という保管庫内の`MessageReader`が未読のメッセージを順に処理します。中身(この場合`MessageReceived`)を参照で順番に返します。
+
+```Rust
+outbound.write(SendMessage {
+   target: message.entity,
+   payload: message.payload.clone(),
+});
+```
+
+`outbound`は`MessageWriter`なので`.write()`が使えます。`.write()`は、`Messages`という保管庫に引数に渡されたラベルを貼って書き込んでいきます。
+この場合`SendMessage`という構造体を渡していますが、フィールドの`target`は送信したい相手、`payload`は内容を入れます。
+
+### まとめ
+
+つまり、
+
+1. `MessageReader`で受信したメッセージを読み取り、
+2. そのメッセージの情報をもとに`SendMessage`を作り、
+3. `MessageWriter`でそれを返しています。
 
 ## アプリを初期化してシステムを登録しよう
 

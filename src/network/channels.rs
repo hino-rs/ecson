@@ -5,10 +5,6 @@ use std::net::SocketAddr;
 use tokio::sync::mpsc;
 
 /// ECSに送るデータ型。
-///
-/// （※補足: 現在のWebSocketの実装ではIDとして `u64` を使用していますが、
-/// こちらは `SocketAddr` になっています。WebTransport用、あるいは過去の実装の
-/// 名残の可能性があります。必要に応じて統合・整理を検討してください）
 pub struct ClientMessage {
     pub client_id: SocketAddr,
     pub payload: NetworkPayload,
