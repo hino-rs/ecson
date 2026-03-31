@@ -37,8 +37,6 @@ fn setup_network_ecs(app: &mut FluxionApp) {
         (
             // ネットワークイベントの受信
             crate::ecs::systems::receive_network_messages_system,
-            // 切断されたユーザーのクリーンアップ（先ほど追加したもの）
-            crate::ecs::systems::cleanup_disconnected_users_system, // 後で任意化
             // ネットワークイベントの送信
             crate::ecs::systems::flush_outbound_messages_system,
         )

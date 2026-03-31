@@ -69,7 +69,6 @@ impl Plugin for ChatCorePlugin {
     fn build(self, app: &mut FluxionApp) {
         app.add_event::<ChatCommand>();
         app.add_event::<ChatMessageBroadcastedEvent>();
-        app.add_event::<UserJoinedRoomEvent>();
 
         app.add_systems(Update, parse_chat_messages_system);
         app.add_systems(

@@ -89,27 +89,3 @@ pub fn flush_outbound_messages_system(
         }
     }
 }
-
-/// ユーザー切断時に、所属していたルーム（RoomMap）からエンティティを安全に取り除くシステム
-pub fn cleanup_disconnected_users_system(
-    mut ev_disconnect: MessageReader<UserDisconnected>,
-    mut room_map: ResMut<RoomMap>,
-    query: Query<&Room>, // どのルームに所属していたかを確認するためのクエリ
-) {
-    for event in ev_disconnect.read() {
-        // 切断されたエンティティがRoomコンポーネントを持っていたか確認
-        if let Ok(room) = query.get(event.entity) {
-            // RoomMapからそのエンティティを削除
-            if let Some(entities_in_room) = room_map.0.get_mut(&room.0) {
-                entities_in_room.remove(&event.entity);
-                println!("ECS: クライアント {} をルーム '{}' から削除しました", event.client_id, room.0);
-                
-                // もしルームが空になったら、ルーム自体を消す（任意）
-                if entities_in_room.is_empty() {
-                    room_map.0.remove(&room.0);
-                    println!("ECS: ルーム '{}' が空になったため削除しました", room.0);
-                }
-            }
-        }
-    }
-}

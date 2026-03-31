@@ -180,22 +180,36 @@ pub fn handle_disconnections_system(
     mut ev_disconnected: MessageReader<UserDisconnected>,
     mut ev_send: MessageWriter<SendMessage>,
     client_query: Query<&Room>,
-    room_map: Res<RoomMap>,
+    room_map_opt: Option<ResMut<RoomMap>>,
 ) {
+    // RoomMapが存在しない場合(ルームプラグイン未使用)は何もしない
+    let Some(mut room_map) = room_map_opt else { return };
+
     for disconnect in ev_disconnected.read() {
         // 切断したユーザーがルームに所属していた場合のみ処理
         let Ok(room) = client_query.get(disconnect.entity) else { continue };
         let Some(members) = room_map.0.get(&room.0) else { continue };
-
+    
+        // --- 通知 ---
         let msg = format!("[System] User {} has left.", disconnect.client_id);
-        
-        for &target_entity in members {
-            // 自分自身には送らない
-            if target_entity != disconnect.entity {
-                ev_send.write(SendMessage {
-                    target: target_entity,
-                    payload: NetworkPayload::Text(msg.clone()),
-                });
+        let targets: Vec<Entity> = members
+            .iter()
+            .filter(|&&e| e != disconnect.entity)
+            .copied()
+            .collect();
+
+        for target_entity in targets {
+            ev_send.write(SendMessage {
+                target: target_entity,
+                payload: NetworkPayload::Text(msg.clone()),
+            });
+        }
+
+        // --- クリーンアップ ---
+        if let Some(members_mut) = room_map.0.get_mut(&room.0) {
+            members_mut.remove(&disconnect.entity);
+            if members_mut.is_empty() {
+                room_map.0.remove(&room.0);
             }
         }
     }
