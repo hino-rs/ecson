@@ -2,14 +2,16 @@
 name = "fluxion"
 version = "0.0.5"
 edition = "2024"
-description = "ECS based Web framework"
 license = "MIT"
 repository = "https://github.com/rustyrs/fluxion"
-
+keywords = ["gameserver", "ecs", "websocket", "realtime", "webtransport"]
+categories = ["network-programming", "asynchronous"]
+description = "ECS-driven stateful bidirectional server framework for Rust"
 
 [dependencies]
-bevy_ecs = { version = "0.18.1", features = ["debug"] }
+bevy_ecs = "0.18.1"
 futures-util = "0.3.32"
+log = "0.4.29"
 tokio = { version = "1.50.0", features = ["full"] }
 tokio-tungstenite = "0.29.0"
 tokio-util = "0.7.18"

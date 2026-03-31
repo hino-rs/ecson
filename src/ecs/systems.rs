@@ -1,24 +1,24 @@
 //! ネットワークイベントの受信処理や、クライアントへのメッセージ送信を行うECSシステム群です。
 
-use crate::ecs::events::*;
-use crate::network::channels::NetworkPayload;
-use crate::{ecs::events::MessageReceived, network::channels::NetworkEvent};
 use crate::ecs::components::*;
+use crate::ecs::events::*;
+use crate::ecs::resources::ConnectionMap;
+use crate::{ecs::events::MessageReceived, network::channels::NetworkEvent};
+use bevy_ecs::message::MessageReader;
 use bevy_ecs::{
-    message::MessageWriter, resource::Resource, 
-    system::{Commands, Query, ResMut}
+    message::MessageWriter,
+    resource::Resource,
+    system::{Commands, Query, ResMut},
 };
 use tokio::sync::mpsc;
-use crate::ecs::resources::ConnectionMap;
-use bevy_ecs::message::MessageReader;
-use crate::ecs::resources::RoomMap;
+use log::{error, info};
 
 /// Tokio側から送られてくるネットワークイベントを受信するためのリソースラッパー。
 #[derive(Resource)]
 pub struct NetworkReceiver(pub mpsc::Receiver<NetworkEvent>);
 
 /// ネットワーク層からのイベントをポーリングし、ECS側の状態を更新するシステム。
-/// 
+///
 /// - 新規接続: エンティティを生成して `ConnectionMap` に登録
 /// - メッセージ受信: ECS側に `MessageReceived` イベントを発行
 /// - 切断: `ConnectionMap` から削除し、`UserDisconnected` イベントを発行
@@ -36,20 +36,27 @@ pub fn receive_network_messages_system(
                 // クライアントを表現するエンティティを生成し、IDと送信用チャンネルを持たせる
                 let entity = commands.spawn((ClientId(id), ClientSender(sender))).id();
                 connection_map.0.insert(id, entity);
-                println!("ECS: 新規接続 {id} -> Entity {entity:?}");
+                info!("ECS: 新規接続 {id} -> Entity {entity:?}");
             }
             NetworkEvent::Message { id, payload } => {
                 // IDからエンティティを特定し、受信イベントを発行して他のシステムに委譲する
                 if let Some(&entity) = connection_map.0.get(&id) {
-                    ev_msg.write(MessageReceived { entity, client_id: id, payload });
+                    ev_msg.write(MessageReceived {
+                        entity,
+                        client_id: id,
+                        payload,
+                    });
                 }
             }
             NetworkEvent::Disconnected { id } => {
-                println!("ECS: {} が切断されました", id);
+                info!("ECS: {} が切断されました", id);
 
                 // UserDisconnected発行 despawnはユーザー定義システムに任せる
                 if let Some(entity) = connection_map.0.remove(&id) {
-                    ev_disconnect.write(UserDisconnected { entity, client_id: id });
+                    ev_disconnect.write(UserDisconnected {
+                        entity,
+                        client_id: id,
+                    });
                 }
             }
         }
@@ -66,11 +73,17 @@ pub fn flush_outbound_messages_system(
         if let Ok(sender) = query.get(outbound.target) {
             // ECSの進行を妨げないよう非同期ブロックを避けて送信
             if let Err(e) = sender.0.try_send(outbound.payload.clone()) {
-                eprintln!("Failed to send message to Entity {:?}: {e}", outbound.target);
+                error!(
+                    "Failed to send message to Entity {:?}: {e}",
+                    outbound.target
+                );
             }
         } else {
             // 切断直後など、宛先エンティティが既に存在しない場合
-            eprintln!("Destination Entity {:?} does not exist anymore", outbound.target);
+            error!(
+                "Destination Entity {:?} does not exist anymore",
+                outbound.target
+            );
         }
     }
 }

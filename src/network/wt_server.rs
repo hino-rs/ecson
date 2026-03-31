@@ -6,6 +6,7 @@ use wtransport::{Endpoint, ServerConfig};
 use crate::network::channels::NetworkEvent;
 use std::sync::atomic::{AtomicU64, Ordering};
 use crate::network::wt_connection;
+use log::{info, error};
 
 /// クライアント接続ごとに一意のIDを生成するための、スレッドセーフなカウンター。
 static NEXT_CONNECTION_ID: AtomicU64 = AtomicU64::new(1);
@@ -25,7 +26,7 @@ pub async fn run(
     client_buffer: usize,
 ) -> Result<(), Box<dyn std::error::Error>> {
     // ローカル開発用の自己署名証明書（Self-signed Certificate）を生成
-    let identity = Identity::self_signed(["localhost", "127.0.0.1", "::1"]).unwrap();
+    let identity = Identity::self_signed(["localhost", "127.0.0.1", "::1"])?;
 
     // クライアント側で証明書の検証をパス（またはハッシュ照合）するために必要なハッシュ値を出力
     println!(
@@ -41,7 +42,7 @@ pub async fn run(
     
     // エンドポイントをバインドしてリッスン開始
     let endpoint = Endpoint::server(config)?;
-    println!("WebTransport server listening on https://{addr}");
+    info!("WebTransport server listening on https://{addr}");
 
     // クライアントからの接続待ちループ
     loop {
@@ -61,15 +62,15 @@ pub async fn run(
                     // (2) セッション要求の受諾
                     match session_request.accept().await {
                         Ok(connection) => {
-                            println!("New WebTransport connection established (ID: {conn_id})");
+                            info!("New WebTransport connection established (ID: {conn_id})");
                             
                             // (3) 確立されたコネクションの処理を `wt_connection::handle_connection` へ委譲
                             wt_connection::handle_connection(connection, conn_id, ecs_tx_clone, client_buffer,).await;
                         }
-                        Err(e) => eprintln!("WebTransport session accept error for ID {conn_id}: {e}"),
+                        Err(e) => error!("WebTransport session accept error for ID {conn_id}: {e}"),
                     }
                 }
-                Err(e) => eprintln!("Incoming WebTransport connection error: {e}"),
+                Err(e) => error!("Incoming WebTransport connection error: {e}"),
             }
         });
     }

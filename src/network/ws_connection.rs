@@ -6,6 +6,7 @@ use tokio::net::TcpStream;
 use tokio::sync::mpsc;
 use tokio_tungstenite::tungstenite::Message;
 use tokio_util::sync::CancellationToken;
+use log::{error, info};
 
 /// 個別のWebSocket接続を処理し、ECS側との双方向通信を管理します。
 ///
@@ -20,25 +21,25 @@ pub async fn handle_connection(
     stream: TcpStream,
     conn_id: u64,
     ecs_tx: mpsc::Sender<NetworkEvent>,
-    client_buffer: usize, 
+    client_buffer: usize,
 ) {
     // WebSocketハンドシェイクの実行
     let ws_stream = match tokio_tungstenite::accept_async(stream).await {
         Ok(ws) => ws,
         Err(e) => {
-            eprintln!("Error during websocket handshake for ID {conn_id}: {e}");
+            error!("Error during websocket handshake for ID {conn_id}: {e}");
             return;
         }
     };
 
-    println!("WebSocket connection established for ID {conn_id}");
+    info!("WebSocket connection established for ID {conn_id}");
 
     // ストリームを送信（Sink）と受信（Stream）に分割
     let (mut ws_sender, mut ws_receiver) = ws_stream.split();
 
     // ECS側からこの接続に対するメッセージを受け取るための専用チャンネルを作成
     let (client_tx, mut client_rx) = mpsc::channel::<NetworkPayload>(client_buffer);
-    
+
     // Read/Writeタスク間で「切断」を伝えるためのシグナル
     let cancel = CancellationToken::new();
 
@@ -52,7 +53,7 @@ pub async fn handle_connection(
         .await
         .is_err()
     {
-        return; 
+        return;
     }
 
     // 書き込み（Write）タスクの生成: ECSから送られてきたメッセージ（client_rx）を受け取り、WebSocketクライアントへ送信する
@@ -83,7 +84,7 @@ pub async fn handle_connection(
     });
 
     let ecs_tx_clone = ecs_tx.clone();
-    
+
     // 読み取り（Read）タスク: WebSocketクライアントからのメッセージを受け取り、ECS（ecs_tx）へ転送する
     // 切断を検知したら CancellationToken をキャンセルして Write タスクを止める
     let read_task = tokio::spawn(async move {
@@ -99,8 +100,11 @@ pub async fn handle_connection(
                 _ => continue, // Ping/Pongなどはスキップ
             };
 
-            if ecs_tx_clone 
-                .send(NetworkEvent::Message { id: conn_id, payload })
+            if ecs_tx_clone
+                .send(NetworkEvent::Message {
+                    id: conn_id,
+                    payload,
+                })
                 .await
                 .is_err()
             {
@@ -111,9 +115,11 @@ pub async fn handle_connection(
         // Writeタスクをキャンセル (client_rxの待機を解除)
         cancel.cancel();
         // ECSへ切断を通知
-        let _ = ecs_tx_clone.send(NetworkEvent::Disconnected { id: conn_id }).await;
+        let _ = ecs_tx_clone
+            .send(NetworkEvent::Disconnected { id: conn_id })
+            .await;
     });
 
     let _ = tokio::join!(read_task, write_task);
-    println!("Connection closed for ID {conn_id}");
+    info!("Connection closed for ID {conn_id}");
 }

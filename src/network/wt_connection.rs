@@ -4,6 +4,7 @@ use crate::network::channels::*;
 use tokio::sync::mpsc;
 use tokio_util::sync::CancellationToken;
 use wtransport::Connection;
+use log::info;
 
 /// 個別のWebTransport接続を処理し、ECS側との双方向通信を管理します。
 ///
@@ -93,5 +94,5 @@ pub async fn handle_connection(
     });
 
     let _ = tokio::join!(send_task, recv_task);
-    println!("WebTransport Connection closed for ID {conn_id}");
+    info!("WebTransport Connection closed for ID {conn_id}");
 }

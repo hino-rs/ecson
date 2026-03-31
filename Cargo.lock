@@ -576,6 +576,7 @@ version = "0.0.5"
 dependencies = [
  "bevy_ecs",
  "futures-util",
+ "log",
  "tokio",
  "tokio-tungstenite",
  "tokio-util",

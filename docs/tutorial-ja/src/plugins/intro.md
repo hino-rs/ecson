@@ -4,7 +4,7 @@
 
 `fluxion::plugins::network`より、
 
-- `FluxionWebSocoketPlugin`
+- `FluxionWebSocketPlugin`
 - `FluxionWebTransportPlugin`
 
 `fluxion::plugins::chat`より、

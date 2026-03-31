@@ -1,11 +1,15 @@
-use crate::ecs::events::UserDisconnected;
+use std::path::Path;
+
 use crate::app::*;
+use crate::ecs::events::UserDisconnected;
 use crate::ecs::events::{MessageReceived, SendMessage};
+use crate::ecs::resources::*;
 use crate::ecs::systems::NetworkReceiver;
 use crate::network::channels::NetworkEvent;
-use crate::ecs::resources::*;
-use tokio::sync::mpsc;
 use crate::plugin::Plugin;
+use log::{error, info};
+use tokio::sync::mpsc;
+use wtransport::Identity;
 
 // --------------------------------------------------------
 // ネットワーク系共通処理
@@ -42,11 +46,9 @@ fn setup_network_ecs(app: &mut FluxionApp, ecs_buffer: usize) {
             crate::ecs::systems::receive_network_messages_system,
             // ネットワークイベントの送信
             crate::ecs::systems::flush_outbound_messages_system,
-        )
+        ),
     );
 }
-
-
 
 // --------------------------------------------------------
 // WebSocket プラグイン
@@ -99,7 +101,7 @@ impl Plugin for FluxionWebSocketPlugin {
             let rt = tokio::runtime::Runtime::new().unwrap();
             rt.block_on(async {
                 if let Err(e) = crate::network::ws_server::run(&addr, ecs_tx, client_buffer).await {
-                    eprintln!("Fluxion Server Error: {e}");
+                    error!("Fluxion Server Error: {e}");
                 }
             });
         });
@@ -107,20 +109,20 @@ impl Plugin for FluxionWebSocketPlugin {
 }
 
 // --------------------------------------------------------
-// WebTransport プラグイン
+// WebTransport 開発用 プラグイン
 // --------------------------------------------------------
 
 /// Tokioランタイムの起動からECSとのブリッジ構築までを隠蔽する、WebTransportサーバー用プラグイン。
-pub struct FluxionWebTransportPlugin {
+pub struct FluxionWebTransportDevPlugin {
     pub address: String,
     ecs_buffer: usize,
     client_buffer: usize,
 }
 
-impl FluxionWebTransportPlugin {
+impl FluxionWebTransportDevPlugin {
     /// 起動するアドレスを指定してプラグインを生成します。
     pub fn new(address: impl Into<String>) -> Self {
-        Self { 
+        Self {
             address: address.into(),
             ecs_buffer: DEFAULT_ECS_BUFFER,
             client_buffer: DEFAULT_CLIENT_BUFFER,
@@ -138,7 +140,7 @@ impl FluxionWebTransportPlugin {
     }
 }
 
-impl Plugin for FluxionWebTransportPlugin {
+impl Plugin for FluxionWebTransportDevPlugin {
     fn build(self, app: &mut FluxionApp) {
         setup_network_ecs(app, self.ecs_buffer);
 
@@ -151,10 +153,34 @@ impl Plugin for FluxionWebTransportPlugin {
             let rt = tokio::runtime::Runtime::new().unwrap();
             rt.block_on(async {
                 if let Err(e) = crate::network::wt_server::run(&addr, ecs_tx, client_buffer).await {
-                    eprintln!("WebTransport Server Error: {e}");
+                    error!("WebTransport Server Error: {e}");
                 }
             });
         });
     }
 }
 
+// --------------------------------------------------------
+// WebTransport 本番用 プラグイン
+// --------------------------------------------------------
+
+// pub struct FluxionWebTransportPlugin {
+//     address: String,
+//     identity: Identity,
+//     ecs_buffer: usize,
+//     client_buffer: usize,
+// }
+
+// impl FluxionWebTransportPlugin {
+//     /// 証明書ファイルを指定する
+//     pub fn new(address: impl Into<String>) -> Self {
+//         todo!()
+//     }
+
+//     pub fn with_cert(
+//         address: impl Into<String>,
+//         cert_path: impl AsRef<Path>,
+//         key_path: impl AsRef<Path>,
+//     ) -> Result<>{
+//     }
+// }

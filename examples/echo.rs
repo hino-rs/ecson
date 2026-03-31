@@ -19,7 +19,7 @@ fn main() {
     FluxionApp::new()
         .add_plugins((
             FluxionWebSocketPlugin::new("127.0.0.1:8080"),
-            FluxionWebTransportPlugin::new("127.0.0.1:4433")
+            FluxionWebTransportDevPlugin::new("127.0.0.1:4433")
         ))
         .add_systems(Update, echo_system)
         .run();

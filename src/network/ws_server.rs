@@ -1,5 +1,6 @@
 //! WebSocketサーバーの起動と、クライアント接続の受け入れを管理するモジュールです。
 
+use log::info;
 use tokio::net::TcpListener;
 use tokio::sync::mpsc;
 use crate::network::{ws_connection, channels::NetworkEvent};
@@ -22,15 +23,14 @@ pub async fn run(
     client_buffer: usize,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let listener = TcpListener::bind(addr).await?;
-    println!("WebSocket server listening on ws://{addr}");
+    info!("WebSocket server listening on ws://{addr}");
 
     // 接続の受け入れループ
     while let Ok((stream, addr)) = listener.accept().await {
         // 新しい接続が来るたびにIDを1進めて取得
         let conn_id = NEXT_CONNECTION_ID.fetch_add(1, Ordering::Relaxed);
 
-        // デバッグログにIDも含めておくと、後から追いやすくなります
-        println!("New connection from: {addr} (ID: {conn_id})");
+        info!("New connection from: {addr} (ID: {conn_id})");
 
         // ECS送信用のチャンネルをクローンし、各コネクション処理タスクへ渡す
         tokio::spawn(ws_connection::handle_connection(stream, conn_id, ecs_tx.clone(), client_buffer,));

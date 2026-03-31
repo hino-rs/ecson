@@ -13,6 +13,7 @@ use bevy_ecs::{
     resource::Resource,
 };
 use crate::ecs::resources::ServerTimeConfig;
+use log::{error, info, warn};
 
 // ============================================================================
 // スケジュールラベルの定義
@@ -70,7 +71,7 @@ impl FluxionApp {
 
     /// サーバーのメインループを開始します。
     pub fn run(&mut self) {
-        println!("FluxionApp🚀 Started.");
+        info!("FluxionApp🚀 Started.");
 
         // =========================================================
         // Startup スケジュールの実行（サーバー起動時に1回だけ）
@@ -124,7 +125,7 @@ impl FluxionApp {
                 // 無限にFixedUpdateが回り続けてしまうのを防ぐ。
                 if frames_processed >= max_ticks_per_frame {
                     if config.warn_on_lag {
-                        eprintln!("[Warning] Server is severely lagging! Skipping fixed frames.");
+                        warn!("[Warning] Server is severely lagging! Skipping fixed frames.");
                     }
                     accumulator = Duration::ZERO;
                     break;
