@@ -74,7 +74,7 @@ impl Plugin for FluxionWebSocketPlugin {
         std::thread::spawn(move || {
             let rt = tokio::runtime::Runtime::new().unwrap();
             rt.block_on(async {
-                if let Err(e) = crate::server::run(&addr, ecs_tx).await {
+                if let Err(e) = crate::network::ws_server::run(&addr, ecs_tx).await {
                     eprintln!("Fluxion Server Error: {e}");
                 }
             });

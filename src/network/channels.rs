@@ -1,14 +1,7 @@
 //! ネットワーク層（Tokio非同期タスク）とECS層（同期ゲームループ）の間で
 //! やり取りされるメッセージやイベントの型を定義するモジュールです。
 
-use std::net::SocketAddr;
 use tokio::sync::mpsc;
-
-/// ECSに送るデータ型。
-pub struct ClientMessage {
-    pub client_id: SocketAddr,
-    pub payload: NetworkPayload,
-}
 
 /// ネットワーク経由で送受信される実データのペイロード。
 /// テキストデータ（JSONなど）とバイナリデータの両方をサポートします。

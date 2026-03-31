@@ -2,7 +2,7 @@
 
 use tokio::net::TcpListener;
 use tokio::sync::mpsc;
-use crate::network::{connection, channels::NetworkEvent};
+use crate::network::{ws_connection, channels::NetworkEvent};
 use std::sync::atomic::{AtomicU64, Ordering};
 
 /// クライアント接続ごとに一意のIDを生成するための、スレッドセーフなカウンター。
@@ -29,7 +29,7 @@ pub async fn run(addr: &str, ecs_tx: mpsc::Sender<NetworkEvent>) -> Result<(), B
         println!("New connection from: {addr} (ID: {conn_id})");
 
         // ECS送信用のチャンネルをクローンし、各コネクション処理タスクへ渡す
-        tokio::spawn(connection::handle_connection(stream, conn_id, ecs_tx.clone()));
+        tokio::spawn(ws_connection::handle_connection(stream, conn_id, ecs_tx.clone()));
     }
     
     Ok(())

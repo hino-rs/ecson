@@ -4,7 +4,6 @@ pub mod app;
 pub mod ecs;
 pub mod network;
 pub mod plugin;
-pub mod server;
 pub mod plugins;
 
 pub mod prelude {
