@@ -7,9 +7,23 @@ use crate::plugins::chat::systems::*;
 // ユーザー（アプリ開発者）に公開するフック用イベント
 // ============================================================================
 
+/// チャット機能固有のコマンドを処理するためのイベント群。
+#[derive(Message)]
+pub enum ChatCommand {
+    /// ルームへの入室要求
+    JoinRoom { entity: Entity, room_name: String },
+    /// ニックネームの変更要求
+    Nick { entity: Entity, name: String },
+    /// 存在するルーム一覧の取得要求
+    ListRooms { entity: Entity },
+    /// ルーム内（または全体）へのテキストブロードキャスト要求
+    Broadcast { entity: Entity, text: String },
+    /// エラーメッセージの通知（システムからクライアントへエラーを返す際などに使用）
+    Error { entity: Entity, message: String },
+}
 
 /// ユーザーがチャットルームに参加した時に発火するイベント
-#[derive(Event, Message)]
+#[derive(Message)]
 pub struct UserJoinedRoomEvent {
     pub client_id: u64,
     pub room_name: String,
@@ -37,7 +51,9 @@ pub struct ChatFullPlugin;
 impl Plugin for ChatFullPlugin {
     fn build(self, app: &mut FluxionApp) {
         // リソースの初期化
-        app.world.insert_resource(RoomMap::default());
+        if !app.world.contains_resource::<RoomMap>() {
+            app.world.insert_resource(RoomMap::default());
+        }
         
         // 内部イベントとフックイベントの登録
         app.add_event::<ChatCommand>();
@@ -57,6 +73,7 @@ impl Plugin for ChatFullPlugin {
                 handle_disconnections_system, // エンジン側が提供するRoomクリーンアップなど
             ),
         );
+        app.add_systems(FixedUpdate, despawn_disconnected_system);
     }
 }
 
@@ -79,6 +96,7 @@ impl Plugin for ChatCorePlugin {
                 handle_broadcast_system,
             ),
         );
+        app.add_systems(FixedUpdate, despawn_disconnected_system);
     }
 }
 
@@ -90,7 +108,9 @@ pub struct ChatRoomPlugin;
 impl Plugin for ChatRoomPlugin {
     fn build(self, app: &mut FluxionApp) {
         // ルーム機能が追加された時だけ、RoomMapリソースが作られる
-        app.world.insert_resource(RoomMap::default());
+        if !app.world.contains_resource::<RoomMap>() {
+            app.world.insert_resource(RoomMap::default());
+        }
         app.add_event::<UserJoinedRoomEvent>();
 
         app.add_systems(
@@ -98,6 +118,7 @@ impl Plugin for ChatRoomPlugin {
             (
                 handle_join_room_system,
                 handle_list_rooms_system,
+                handle_disconnections_system, 
             ),
         );
     }

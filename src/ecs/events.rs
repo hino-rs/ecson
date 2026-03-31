@@ -26,12 +26,13 @@ pub struct SendMessage {
     pub payload: NetworkPayload,
 }
 
-/// 接続している全クライアントに対して一斉にメッセージを送信するためのイベント。
-#[derive(Message)]
-pub struct BroadcastMessage {
-    /// 一斉送信するデータ本体
-    pub msg: NetworkPayload,
-}
+// 接続している全クライアントに対して一斉にメッセージを送信するためのイベント。
+// 将来ブロードキャスト最適化時に使う予定
+// #[derive(Message)]
+// pub struct BroadcastMessage {
+//     /// 一斉送信するデータ本体
+//     pub msg: NetworkPayload,
+// }
 
 /// クライアントとの接続が切断された際に発行されるイベント。
 /// 退出処理やリソースのクリーンアップ（ConnectionMapからの削除など）に使用されます。

@@ -56,21 +56,6 @@ pub fn receive_network_messages_system(
     }
 }
 
-/// 全クライアントに対して定期的にテストメッセージを送信するシステム。
-/// （※現状は固定文字列を送るデバッグ・動作確認用の実装と思われます）
-pub fn send_network_messages_system(
-    query: Query<(&ClientId, &ClientSender)>,
-) {
-    for (client_id, sender) in query.iter() {
-        let msg = NetworkPayload::Text("Hello from ECS Engine".into());
-
-        // ECSのTick（ゲームループ）をブロックしないように try_send を使用
-        if let Err(e) = sender.0.try_send(msg) {
-            println!("{} への送信に失敗: {}", client_id.0, e);
-        }
-    }
-}
-
 /// ECS内で発行された送信要求（`SendMessage`）を処理し、ネットワーク層へ引き渡すシステム。
 pub fn flush_outbound_messages_system(
     mut outbound_messages: MessageReader<SendMessage>,

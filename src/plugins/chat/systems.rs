@@ -1,20 +1,7 @@
 use crate::prelude::*;
 use crate::plugins::chat::UserJoinedRoomEvent;
+use crate::plugins::chat::ChatCommand;
 
-/// チャット機能固有のコマンドを処理するためのイベント群。
-#[derive(Event, Message)]
-pub enum ChatCommand {
-    /// ルームへの入室要求
-    JoinRoom { entity: Entity, room_name: String },
-    /// ニックネームの変更要求
-    Nick { entity: Entity, name: String },
-    /// 存在するルーム一覧の取得要求
-    ListRooms { entity: Entity },
-    /// ルーム内（または全体）へのテキストブロードキャスト要求
-    Broadcast { entity: Entity, text: String },
-    /// エラーメッセージの通知（システムからクライアントへエラーを返す際などに使用）
-    Error { entity: Entity, message: String },
-}
 
 /// 受信したテキストメッセージを解析し、適切な ChatCommand イベントを発行するシステム
 pub fn parse_chat_messages_system(
