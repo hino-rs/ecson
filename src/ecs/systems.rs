@@ -46,10 +46,10 @@ pub fn receive_network_messages_system(
             }
             NetworkEvent::Disconnected { id } => {
                 println!("ECS: {} が切断されました", id);
-                // エンティティの特定とマップからの削除を同時に行い、切断イベントを発行
+
+                // UserDisconnected発行 despawnはユーザー定義システムに任せる
                 if let Some(entity) = connection_map.0.remove(&id) {
                     ev_disconnect.write(UserDisconnected { entity, client_id: id });
-                    commands.entity(entity).despawn();
                 }
             }
         }
@@ -87,5 +87,19 @@ pub fn flush_outbound_messages_system(
             // 切断直後など、宛先エンティティが既に存在しない場合
             eprintln!("Destination Entity {:?} does not exist anymore", outbound.target);
         }
+    }
+}
+
+/// 切断済みエンティティを最後にまとめて破棄するシステム。
+///
+/// UserDisconnected を購読するすべてのシステム（handle_disconnections_system など）が
+/// エンティティへのクエリを終えた後に、このシステムが despawn を実行します。
+/// FixedUpdate の末尾に `.chain()` で繋いで使います。
+pub fn despawn_disconnected_system(
+    mut commands: Commands,
+    mut ev_disconnected: MessageReader<UserDisconnected>,
+) {
+    for disconnect in ev_disconnected.read() {
+        commands.entity(disconnect.entity).despawn();
     }
 }

@@ -1,6 +1,7 @@
 //! サーバーのメインティックループとシステムの登録を管理する `FluxionApp` を定義します。
 
 use std::time::{Duration, Instant};
+use bevy_ecs::error::DefaultErrorHandler;
 use bevy_ecs::message::{Message, Messages};
 use bevy_ecs::prelude::*;
 use crate::plugin::*;
@@ -41,8 +42,6 @@ pub struct FluxionApp {
     pub world: World,
     /// システムが登録され、実行されるメインスケジュール。
     pub schedules: Schedules,
-    /// デフォルトのエラーハンドラ。
-    default_error_handler: Option<ErrorHandler>,
 }
 
 impl Default for FluxionApp {
@@ -59,7 +58,6 @@ impl Default for FluxionApp {
         FluxionApp {
             world,
             schedules,
-            default_error_handler: None,
         }
     }
 }
@@ -141,6 +139,13 @@ impl FluxionApp {
                 std::thread::sleep(fixed_timestep - elapsed_since_current);
             }
         }
+    }
+
+    /// エラーハンドラを設定します。
+    /// 設定しない場合はpanicが使われます。
+    pub fn set_error_handler(&mut self, handler: ErrorHandler) -> &mut Self {
+        self.world.insert_resource(DefaultErrorHandler(handler));
+        self
     }
 
     /// `World` にリソースを追加します。
