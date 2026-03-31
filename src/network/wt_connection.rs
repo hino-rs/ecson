@@ -2,6 +2,7 @@
 
 use crate::network::channels::*;
 use tokio::sync::mpsc;
+use tokio_util::sync::CancellationToken;
 use wtransport::Connection;
 
 /// 個別のWebTransport接続を処理し、ECS側との双方向通信を管理します。
@@ -22,64 +23,75 @@ pub async fn handle_connection(
     // ECS側からこの接続に対するメッセージを受け取るための専用チャンネルを作成
     let (client_tx, mut client_rx) = mpsc::channel::<NetworkPayload>(client_buffer);
 
-    // ECSへ「接続完了」イベントを通知
-    // 合わせてECSから返信するための送信チャンネル（client_tx）を渡す
+    // Read/Send タスク間で「切断」を伝えるためのシグナル
+    let cancel = CancellationToken::new();
+
     if ecs_tx.send(NetworkEvent::Connected {
-        id: conn_id, 
+        id: conn_id,
         sender: client_tx,
     }).await.is_err() {
         return;
     }
 
-    // WebTransportのConnectionはClone可能で、スレッドセーフに送受信を分割できます
     let conn_for_send = connection.clone();
     let conn_for_recv = connection.clone();
     let ecs_tx_clone = ecs_tx.clone();
 
-    // 送信（Write）タスクの生成
-    // ECSから送られてきたペイロードを、WebTransportのデータグラムとして送信します
+    // Send タスク: ECS からのペイロードをデータグラムとして送信する
+    // CancellationToken がキャンセルされたら select! で即座に抜ける
+    let cancel_for_send = cancel.clone();
     let send_task = tokio::spawn(async move {
-        while let Some(payload) = client_rx.recv().await {
-            // ※データグラムでの送信のため、TCPのような到達保証や順序保証はありません
-            match payload {
-                NetworkPayload::Text(t) => {
-                    let _ = conn_for_send.send_datagram(t.into_bytes());
+        loop {
+            tokio::select! {
+                // Recv タスクが切断を検知したらここで抜ける
+                _ = cancel_for_send.cancelled() => break,
+
+                payload = client_rx.recv() => {
+                    match payload {
+                        Some(p) => {
+                            match p {
+                                NetworkPayload::Text(t) => {
+                                    let _ = conn_for_send.send_datagram(t.into_bytes());
+                                }
+                                NetworkPayload::Binary(b) => {
+                                    let _ = conn_for_send.send_datagram(b);
+                                }
+                            }
+                        }
+                        // client_tx が drop された（= ECS 側がエンティティを破棄した）
+                        None => break,
+                    }
                 }
-                NetworkPayload::Binary(b) => {
-                    let _ = conn_for_send.send_datagram(b);
-                }
-            }            
+            }
         }
     });
 
-    // 受信（Read）タスクの生成
-    // クライアントから送られてきたデータグラムを受信し、ECSへ転送します
+    // Recv タスク: クライアントからのデータグラムを受信して ECS へ転送する
+    // 切断を検知したら CancellationToken をキャンセルして Send タスクを止める
     let recv_task = tokio::spawn(async move {
-        // データグラムの受信待ちループ
         while let Ok(datagram) = conn_for_recv.receive_datagram().await {
             let bytes = datagram.to_vec();
 
-            // 試行的にUTF-8のテキストとしてパースし、失敗した場合はバイナリとして扱う
             let payload = match String::from_utf8(bytes) {
                 Ok(text) => NetworkPayload::Text(text),
-                Err(e) => NetworkPayload::Binary(e.into_bytes()), // エラーから元のバイト列を回収
+                Err(e) => NetworkPayload::Binary(e.into_bytes()),
             };
 
-            // ECSへメッセージ受信イベントを送信
             if ecs_tx_clone
                 .send(NetworkEvent::Message { id: conn_id, payload })
                 .await
                 .is_err()
             {
-                break; // ECS側がシャットダウン等の理由で受け取れなければループを抜ける
+                break;
             }
         }
-        
-        // ループを抜けた（＝切断された）場合、ECSへ「切断」イベントを通知
+
+        // ① Send タスクをキャンセル（client_rx の待機を解除）
+        cancel.cancel();
+        // ② ECS へ切断を通知
         let _ = ecs_tx_clone.send(NetworkEvent::Disconnected { id: conn_id }).await;
     });
 
-    // ReadタスクとWriteタスクの両方が完了するまで待機
     let _ = tokio::join!(send_task, recv_task);
     println!("WebTransport Connection closed for ID {conn_id}");
 }
