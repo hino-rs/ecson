@@ -1,4 +1,4 @@
-use fluxion::prelude::*;
+use ecson::prelude::*;
 
 fn broadcast_system(
     mut ev_received: MessageReader<MessageReceived>,
@@ -7,8 +7,8 @@ fn broadcast_system(
 ) {
     for msg in ev_received.read() {
         // テキストメッセージのみを処理対象とする
-        let NetworkPayload::Text(text) = &msg.payload else { 
-            continue; 
+        let NetworkPayload::Text(text) = &msg.payload else {
+            continue;
         };
 
         // 「誰が発言したか」を分かりやすくフォーマット
@@ -25,23 +25,21 @@ fn broadcast_system(
     }
 }
 
-
 fn main() {
-    FluxionApp::new()
-        .add_plugins(FluxionWebSocketPlugin::new("127.0.0.1:8080"))
+    EcsonApp::new()
+        .add_plugins(EcsonWebSocketPlugin::new("127.0.0.1:8080"))
         .add_systems(Update, broadcast_system)
         .run();
 }
 
-
 // 0.0.5
 
-// use fluxion::plugins::chat::*;
-// use fluxion::prelude::*;
+// use ecson::plugins::chat::*;
+// use ecson::prelude::*;
 
 // fn main() {
-//     FluxionApp::new()
-//         .add_plugins(FluxionWebSocketPlugin::new("127.0.0.1:8080"))
+//     EcsonApp::new()
+//         .add_plugins(EcsonWebSocketPlugin::new("127.0.0.1:8080"))
 //         .add_plugins(ChatCorePlugin)
 //         .run();
 // }

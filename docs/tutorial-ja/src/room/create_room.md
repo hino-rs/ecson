@@ -7,7 +7,7 @@
 `prelude`に`Component`が含まれています。
 
 ```Rust
-use fluxion::prelude::*;
+use ecson::prelude::*;
 
 #[derive(Component)]
 struct Room(String);
@@ -41,7 +41,7 @@ fn cleanup_system(
 }
 ```
 
-`UserDisconnected`はFluxionが提供するものです。切断されたクライアントに対応するECSエンティティや、切断されたクライアントのネットワークIDが入っています。
+`UserDisconnected`はEcsonが提供するものです。切断されたクライアントに対応するECSエンティティや、切断されたクライアントのネットワークIDが入っています。
 
 `Commands`は`bevy_ecs`が提供するものです。ECSは「世界」を持ちます。その中で変更処理をする際は基本的に`Commands`を介します。借用規則や並列処理、不整合をいい感じにやってくれます。
 
@@ -137,15 +137,15 @@ for event in ev_disconnect.read() {
 }
 ```
 
-あとで追加する`FluxionWebSocketPlugin`はネットワークを監視しており、通信が途切れたりした瞬間に`UserDisconnected`というイベントを発行します。
+あとで追加する`EcsonWebSocketPlugin`はネットワークを監視しており、通信が途切れたりした瞬間に`UserDisconnected`というイベントを発行します。
 これを活用し、不要なエンティティをデスポーンさせています。メモリリークを防ぐためです。
 
 ## システムを登録しよう
 
 ```Rust
 fn main() {
-    FluxionApp::new()
-        .add_plugins(FluxionWebSocketPlugin::new("127.0.0.1:8080"))
+    EcsonApp::new()
+        .add_plugins(EcsonWebSocketPlugin::new("127.0.0.1:8080"))
         .add_systems(Update, (chat_server_system, cleanup_system))
         .run()
 }
@@ -160,5 +160,5 @@ fn main() {
 ![alt text](chrome_uTR4gLXbx9.gif)
 
 お疲れさまでした。
-これであなたはFluxionにおけるチャットアプリ開発方法を身に付けました。
+これであなたはEcsonにおけるチャットアプリ開発方法を身に付けました。
 次の章では、チャットアプリを爆速で開発するためのプラグインを紹介します。

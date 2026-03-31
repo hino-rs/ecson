@@ -12,17 +12,17 @@ pub mod prelude {
     pub use crate::bevy_ecs::event::Event;
     pub use crate::bevy_ecs::message::{MessageReader, MessageWriter, Messages};
 
-    pub use crate::app::{FluxionApp, Update, FixedUpdate, Startup};
+    pub use crate::app::{EcsonApp, FixedUpdate, Startup, Update};
     pub use crate::ecs::components::*;
+    pub use crate::ecs::events::SendMessage;
     pub use crate::ecs::events::*;
+    pub use crate::ecs::resources::*;
     pub use crate::ecs::systems::*;
     pub use crate::network::channels::NetworkEvent;
-    pub use crate::ecs::events::SendMessage;
-    pub use crate::ecs::resources::*;
 
-    pub use crate::plugins::network::*;
     pub use crate::ecs::resources::ServerTimeConfig;
     pub use crate::network::channels::NetworkPayload;
+    pub use crate::plugins::network::*;
 
     pub use crate::plugin::Plugin;
 }

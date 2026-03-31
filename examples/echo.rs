@@ -1,8 +1,8 @@
 // v0.0.5
 
-use fluxion::prelude::*;
+use ecson::prelude::*;
 
-// Define System 
+// Define System
 fn echo_system(
     mut messages: MessageReader<MessageReceived>,
     mut outbound: MessageWriter<SendMessage>,
@@ -16,10 +16,10 @@ fn echo_system(
 }
 
 fn main() {
-    FluxionApp::new()
+    EcsonApp::new()
         .add_plugins((
-            FluxionWebSocketPlugin::new("127.0.0.1:8080"),
-            FluxionWebTransportDevPlugin::new("127.0.0.1:4433")
+            EcsonWebSocketPlugin::new("127.0.0.1:8080"),
+            EcsonWebTransportDevPlugin::new("127.0.0.1:4433"),
         ))
         .add_systems(Update, echo_system)
         .run();
@@ -27,19 +27,18 @@ fn main() {
 
 // For eco-friendly
 // fn main() {
-//     FluxionApp::new()
+//     EcsonApp::new()
 //         .insert_resource(TickRate::ECO)
-//         .add_plugins(FluxionWebSocketPlugin::new("127.0.0.1:8080"))
+//         .add_plugins(EcsonWebSocketPlugin::new("127.0.0.1:8080"))
 //         .add_systems(Update, echo_system)
 //         .run();
 // }
 
 // For real-time
 // fn main() {
-//     FluxionApp::new()
+//     EcsonApp::new()
 //         .insert_resource(TickRate::REALTIME)
-//         .add_plugins(FluxionWebTransportPlugin::new("127.0.0.1:8080"))
+//         .add_plugins(EcsonWebTransportPlugin::new("127.0.0.1:8080"))
 //         .add_systems(Update, echo_system)
 //         .run();
 // }
-

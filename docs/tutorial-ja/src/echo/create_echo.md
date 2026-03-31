@@ -6,7 +6,7 @@
 
 ```Rust
 // 頻繁に使用されるものが詰まってます
-use fluxion::prelude::*;
+use ecson::prelude::*;
 
 fn echo_system(
     mut messages: MessageReader<MessageReceived>,
@@ -61,8 +61,8 @@ outbound.write(SendMessage {
 
 ```Rust
 fn main() {
-    FluxionApp::new()
-        .add_plugins(FluxionWebSocketPlugin::new("127.0.0.1:8080"))
+    EcsonApp::new()
+        .add_plugins(EcsonWebSocketPlugin::new("127.0.0.1:8080"))
         .add_systems(Update, echo_system)
         .run();
 }
@@ -70,10 +70,10 @@ fn main() {
 
 上から見ていきましょう。
 
-1. `FluxionApp::new()`<br>
-  `FluxionApp`インスタンスを作ります。これがECSやネットワーク等すべてを統括しています。
-2. `.add_plugins(FluxionWebSocketPlugin::new("127.0.0.1:8080"))`<br>
-  `.add_plugins`でプラグインを登録します。`FluxionWebSocketPlugin`はWebSocketサーバーをFluxionに統合します。`::new("127.0.0.1:8080")`によってアドレスを*127.0.0.1:8080*で起動しています。
+1. `EcsonApp::new()`<br>
+  `EcsonApp`インスタンスを作ります。これがECSやネットワーク等すべてを統括しています。
+2. `.add_plugins(EcsonWebSocketPlugin::new("127.0.0.1:8080"))`<br>
+  `.add_plugins`でプラグインを登録します。`EcsonWebSocketPlugin`はWebSocketサーバーをEcsonに統合します。`::new("127.0.0.1:8080")`によってアドレスを*127.0.0.1:8080*で起動しています。
 3. `.add_systems(Update, echo_system)`<br>
   `add_systems`でシステム(ロジック)を登録します。第一引数にはスケジュールを、第二引数にはシステムを渡します。`Update`は可能な限り毎フレーム実行します。
 4. `.run();`<br>
@@ -89,7 +89,7 @@ fn main() {
     <title>echoテスト</title>
 </head>
 <body>
-    <h1>Fluxion Echo Test</h1>
+    <h1>Ecson Echo Test</h1>
     <input type="text" id="msgInput" placeholder="メッセージを入力">
     <button onclick="sendMessage()">送信</button>
     <ul id="log"></ul>

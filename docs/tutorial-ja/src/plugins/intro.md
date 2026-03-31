@@ -2,12 +2,12 @@
 
 2026/03/31現在提供されているプラグインは下記のとおりです。
 
-`fluxion::plugins::network`より、
+`ecson::plugins::network`より、
 
-- `FluxionWebSocketPlugin`
-- `FluxionWebTransportPlugin`
+- `EcsonWebSocketPlugin`
+- `EcsonWebTransportPlugin`
 
-`fluxion::plugins::chat`より、
+`ecson::plugins::chat`より、
 
 - `ChatCorePlugin`
 - `ChatRoomPlugin`
@@ -22,12 +22,12 @@
 では、ルーム付きチャットサーバーを作ってみましょう。
 
 ```Rust
-use fluxion::prelude::*;
-use fluxion::plugins::chat::ChatFullPlugin;
+use ecson::prelude::*;
+use ecson::plugins::chat::ChatFullPlugin;
 
 fn main() {
-    FluxionApp::new()
-        .add_plugins(FluxionWebSocketPlugin::new("127.0.0.1:8080"))
+    EcsonApp::new()
+        .add_plugins(EcsonWebSocketPlugin::new("127.0.0.1:8080"))
         .add_plugins(ChatFullPlugin)
         .run()
 }

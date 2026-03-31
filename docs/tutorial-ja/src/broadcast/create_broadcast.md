@@ -5,7 +5,7 @@
 先に完成形を見てください。
 
 ```Rust
-use fluxion::prelude::*;
+use ecson::prelude::*;
 
 fn broadcast_system(
     mut ev_received: MessageReader<MessageReceived>,
@@ -39,12 +39,12 @@ fn broadcast_system(
 3. `client_query: Query<Entity, With<ClientId>>`:<br>
   以下で説明します。
 
-Fluxionは内部で`bevy_ecs`を使用しています。`Query`も`Entity`も`With`も`bevy_ecs`のものです。
+Ecsonは内部で`bevy_ecs`を使用しています。`Query`も`Entity`も`With`も`bevy_ecs`のものです。
 
 |||
 |---|---|
 |`Query`|どのコンポーネントを持っているエンティティが欲しいかを定義する。検索窓口のようなもの。|
-|`Entity`|取得したいデータの中身。Fluxionでは接続者として扱う。|
+|`Entity`|取得したいデータの中身。Ecsonでは接続者として扱う。|
 |`With`|フィルター|
 
 つまり、`Query<Entity, With<ClientId>>`は「`ClientId`という印が付いているエンティティ」を探しています。

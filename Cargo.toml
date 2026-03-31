@@ -1,9 +1,9 @@
 [package]
-name = "fluxion"
+name = "ecson"
 version = "0.0.5"
 edition = "2024"
 license = "MIT"
-repository = "https://github.com/rustyrs/fluxion"
+repository = "https://github.com/rustyrs/ecson"
 keywords = ["gameserver", "ecs", "websocket", "realtime", "webtransport"]
 categories = ["network-programming", "asynchronous"]
 description = "ECS-driven stateful bidirectional server framework for Rust"

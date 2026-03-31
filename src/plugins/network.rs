@@ -21,7 +21,7 @@ const DEFAULT_CLIENT_BUFFER: usize = 100;
 
 /// ネットワーク系プラグイン（WebSocket / WebTransport）で共通して必要な
 /// ECS側の初期化（チャンネル、リソース、システムの登録）を行います。
-fn setup_network_ecs(app: &mut FluxionApp, ecs_buffer: usize) {
+fn setup_network_ecs(app: &mut EcsonApp, ecs_buffer: usize) {
     // 既に初期化済みの場合はスキップ
     if app.world.contains_resource::<ConnectionMap>() {
         return;
@@ -55,7 +55,7 @@ fn setup_network_ecs(app: &mut FluxionApp, ecs_buffer: usize) {
 // --------------------------------------------------------
 
 /// Tokioランタイムの起動からECSとのブリッジ構築までを隠蔽する、WebSocketサーバー用プラグイン。
-pub struct FluxionWebSocketPlugin {
+pub struct EcsonWebSocketPlugin {
     pub address: String,
     /// ECS受信チャンネルのバッファサイズ(全クライアント共通)
     ecs_buffer: usize,
@@ -63,7 +63,7 @@ pub struct FluxionWebSocketPlugin {
     client_buffer: usize,
 }
 
-impl FluxionWebSocketPlugin {
+impl EcsonWebSocketPlugin {
     /// 起動するアドレス(例: "127.0.0.1:8080")を指定してプラグインを生成します。
     pub fn new(address: impl Into<String>) -> Self {
         Self {
@@ -88,8 +88,8 @@ impl FluxionWebSocketPlugin {
     }
 }
 
-impl Plugin for FluxionWebSocketPlugin {
-    fn build(self, app: &mut FluxionApp) {
+impl Plugin for EcsonWebSocketPlugin {
+    fn build(self, app: &mut EcsonApp) {
         setup_network_ecs(app, self.ecs_buffer);
 
         let ecs_tx = app.world.get_resource::<NetworkSender>().unwrap().0.clone();
@@ -101,7 +101,7 @@ impl Plugin for FluxionWebSocketPlugin {
             let rt = tokio::runtime::Runtime::new().unwrap();
             rt.block_on(async {
                 if let Err(e) = crate::network::ws_server::run(&addr, ecs_tx, client_buffer).await {
-                    error!("Fluxion Server Error: {e}");
+                    error!("Ecson Server Error: {e}");
                 }
             });
         });
@@ -113,13 +113,13 @@ impl Plugin for FluxionWebSocketPlugin {
 // --------------------------------------------------------
 
 /// Tokioランタイムの起動からECSとのブリッジ構築までを隠蔽する、WebTransportサーバー用プラグイン。
-pub struct FluxionWebTransportDevPlugin {
+pub struct EcsonWebTransportDevPlugin {
     pub address: String,
     ecs_buffer: usize,
     client_buffer: usize,
 }
 
-impl FluxionWebTransportDevPlugin {
+impl EcsonWebTransportDevPlugin {
     /// 起動するアドレスを指定してプラグインを生成します。
     pub fn new(address: impl Into<String>) -> Self {
         Self {
@@ -140,8 +140,8 @@ impl FluxionWebTransportDevPlugin {
     }
 }
 
-impl Plugin for FluxionWebTransportDevPlugin {
-    fn build(self, app: &mut FluxionApp) {
+impl Plugin for EcsonWebTransportDevPlugin {
+    fn build(self, app: &mut EcsonApp) {
         setup_network_ecs(app, self.ecs_buffer);
 
         let ecs_tx = app.world.get_resource::<NetworkSender>().unwrap().0.clone();
@@ -164,14 +164,14 @@ impl Plugin for FluxionWebTransportDevPlugin {
 // WebTransport 本番用 プラグイン
 // --------------------------------------------------------
 
-// pub struct FluxionWebTransportPlugin {
+// pub struct EcsonWebTransportPlugin {
 //     address: String,
 //     identity: Identity,
 //     ecs_buffer: usize,
 //     client_buffer: usize,
 // }
 
-// impl FluxionWebTransportPlugin {
+// impl EcsonWebTransportPlugin {
 //     /// 証明書ファイルを指定する
 //     pub fn new(address: impl Into<String>) -> Self {
 //         todo!()

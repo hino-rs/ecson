@@ -49,7 +49,7 @@ pub struct ChatFullPlugin;
 
 
 impl Plugin for ChatFullPlugin {
-    fn build(self, app: &mut FluxionApp) {
+    fn build(self, app: &mut EcsonApp) {
         // リソースの初期化
         if !app.world.contains_resource::<RoomMap>() {
             app.world.insert_resource(RoomMap::default());
@@ -83,7 +83,7 @@ impl Plugin for ChatFullPlugin {
 pub struct ChatCorePlugin;
 
 impl Plugin for ChatCorePlugin {
-    fn build(self, app: &mut FluxionApp) {
+    fn build(self, app: &mut EcsonApp) {
         app.add_event::<ChatCommand>();
         app.add_event::<ChatMessageBroadcastedEvent>();
 
@@ -106,7 +106,7 @@ impl Plugin for ChatCorePlugin {
 pub struct ChatRoomPlugin;
 
 impl Plugin for ChatRoomPlugin {
-    fn build(self, app: &mut FluxionApp) {
+    fn build(self, app: &mut EcsonApp) {
         // ルーム機能が追加された時だけ、RoomMapリソースが作られる
         if !app.world.contains_resource::<RoomMap>() {
             app.world.insert_resource(RoomMap::default());

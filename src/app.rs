@@ -1,19 +1,19 @@
-//! サーバーのメインティックループとシステムの登録を管理する `FluxionApp` を定義します。
+//! サーバーのメインティックループとシステムの登録を管理する `EcsonApp` を定義します。
 
-use std::time::{Duration, Instant};
+use crate::ecs::resources::ServerTimeConfig;
+use crate::plugin::*;
 use bevy_ecs::error::DefaultErrorHandler;
 use bevy_ecs::message::{Message, Messages};
 use bevy_ecs::prelude::*;
-use crate::plugin::*;
 use bevy_ecs::{
-    error::ErrorHandler, 
-    schedule::{IntoScheduleConfigs, Schedule, ScheduleLabel}, 
-    system::ScheduleSystem, 
-    world::World,
+    error::ErrorHandler,
     resource::Resource,
+    schedule::{IntoScheduleConfigs, Schedule, ScheduleLabel},
+    system::ScheduleSystem,
+    world::World,
 };
-use crate::ecs::resources::ServerTimeConfig;
 use log::{error, info, warn};
+use std::time::{Duration, Instant};
 
 // ============================================================================
 // スケジュールラベルの定義
@@ -35,17 +35,17 @@ pub struct FixedUpdate;
 // アプリケーションコア
 // ============================================================================
 /// ECSの `World` と実行 `Schedule` を管理するコアアプリケーション構造体。
-/// 
+///
 /// プラグインやシステムの登録、およびメイン実行ループの駆動を担います。
 #[must_use]
-pub struct FluxionApp {
+pub struct EcsonApp {
     /// 全てのエンティティ、コンポーネント、リソースを保持するECSワールド。
     pub world: World,
     /// システムが登録され、実行されるメインスケジュール。
     pub schedules: Schedules,
 }
 
-impl Default for FluxionApp {
+impl Default for EcsonApp {
     /// 空の `World` と `MainSchedule` を持つデフォルトインスタンスを作成します。
     fn default() -> Self {
         let mut world = World::new();
@@ -56,22 +56,19 @@ impl Default for FluxionApp {
         schedules.insert(Schedule::new(Update));
         schedules.insert(Schedule::new(FixedUpdate));
 
-        FluxionApp {
-            world,
-            schedules,
-        }
+        EcsonApp { world, schedules }
     }
 }
 
-impl FluxionApp {
-    /// 新しい `FluxionApp` インスタンスを作成します。
-    pub fn new() -> FluxionApp {
-        FluxionApp::default()
+impl EcsonApp {
+    /// 新しい `EcsonApp` インスタンスを作成します。
+    pub fn new() -> EcsonApp {
+        EcsonApp::default()
     }
 
     /// サーバーのメインループを開始します。
     pub fn run(&mut self) {
-        info!("FluxionApp🚀 Started.");
+        info!("EcsonApp🚀 Started.");
 
         // =========================================================
         // Startup スケジュールの実行（サーバー起動時に1回だけ）
@@ -81,7 +78,8 @@ impl FluxionApp {
         }
 
         // サーバーのコンフィグを取得
-        let config = self.world
+        let config = self
+            .world
             .get_resource::<ServerTimeConfig>()
             .cloned()
             .unwrap_or_default();
@@ -160,16 +158,13 @@ impl FluxionApp {
         if !self.world.contains_resource::<Messages<M>>() {
             self.world.insert_resource(Messages::<M>::default());
 
-            self.add_systems(
-                Update,
-                |mut msgs: ResMut<Messages<M>>| msgs.update()
-            );
+            self.add_systems(Update, |mut msgs: ResMut<Messages<M>>| msgs.update());
         }
         self
     }
 
     /// プラグインの現在の状態を取得します。
-    /// 
+    ///
     /// （※現在は `Ready` 固定ですが、将来的なステート管理のために用意されています）
     #[inline]
     pub fn plugins_state(&mut self) -> PluginsState {
@@ -188,8 +183,8 @@ impl FluxionApp {
         schedule_label: L,
         systems: impl IntoScheduleConfigs<ScheduleSystem, M>,
     ) -> &mut Self
-    where 
-        L: ScheduleLabel + Clone
+    where
+        L: ScheduleLabel + Clone,
     {
         // 指定されたラベルの箱がまだ存在しない場合は新しく作る
         if !self.schedules.contains(schedule_label.clone()) {
