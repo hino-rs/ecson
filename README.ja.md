@@ -42,17 +42,17 @@ MITライセンス
 サンプルをいくつか設けていますので、参考にしてください。
 
 1. echo.rs
-2. broadcast_chat
-3. room_chat
+2. broadcast_chat.rs
+3. room_chat.rs
 
 全て[examples](https://github.com/rustyrs/fluxion/tree/main/examples)に入っています。
 /frontendにテスト用のHTMLもあるのでぜひ。
 
 ## ドキュメント
 
-[Fluxionチュートリアル](https://rustyrs.github.io/fluxion/)
-[Fluxion ECS解説](#) - 予定
-[Fluxion リファレンス](#) - 予定
+- [Fluxionチュートリアル](https://rustyrs.github.io/fluxion/)
+- [Fluxion ECS解説](#) - 予定
+- [Fluxion リファレンス](#) - 予定
 
 ## 謝辞
 

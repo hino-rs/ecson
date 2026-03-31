@@ -22,7 +22,7 @@ pub mod prelude {
     pub use crate::ecs::resources::*;
 
     pub use crate::plugins::network::*;
-    pub use crate::ecs::resources::ServerTickRate as TickRate;
+    pub use crate::ecs::resources::ServerTimeConfig;
     pub use crate::network::channels::NetworkPayload;
 
     pub use crate::plugin::Plugin;

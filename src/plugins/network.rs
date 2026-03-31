@@ -26,7 +26,6 @@ fn setup_network_ecs(app: &mut FluxionApp) {
 
     // メッセージ系イベントリソースの初期化
     app.world.insert_resource(ConnectionMap::default());
-    app.world.insert_resource(RoomMap::default());
     
     app.add_event::<MessageReceived>();
     app.add_event::<SendMessage>();

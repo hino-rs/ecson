@@ -11,7 +11,7 @@ use bevy_ecs::{
     world::World,
     resource::Resource,
 };
-use crate::ecs::resources::ServerTickRate;
+use crate::ecs::resources::ServerTimeConfig;
 
 // ============================================================================
 // スケジュールラベルの定義
@@ -49,7 +49,7 @@ impl Default for FluxionApp {
     /// 空の `World` と `MainSchedule` を持つデフォルトインスタンスを作成します。
     fn default() -> Self {
         let mut world = World::new();
-        world.insert_resource(ServerTickRate::default());
+        world.insert_resource(ServerTimeConfig::default());
 
         let mut schedules = Schedules::new();
         schedules.insert(Schedule::new(Startup));
@@ -81,12 +81,14 @@ impl FluxionApp {
             startup_schedule.run(&mut self.world);
         }
 
-        // サーバーのTickRateを取得
-        let tick_rate = self.world
-            .get_resource::<ServerTickRate>()
-            .map(|r| r.0)
-            .unwrap_or(60.0);
-        let fixed_timestep = Duration::from_secs_f64(1.0 / tick_rate);
+        // サーバーのコンフィグを取得
+        let config = self.world
+            .get_resource::<ServerTimeConfig>()
+            .cloned()
+            .unwrap_or_default();
+
+        let fixed_timestep = Duration::from_secs_f64(1.0 / config.tick_rate);
+        let max_ticks_per_frame = config.max_ticks_per_frame;
 
         let mut previous_time = Instant::now();
         let mut accumulator = Duration::ZERO;
@@ -122,8 +124,10 @@ impl FluxionApp {
                 // 無限ループ対策
                 // サーバーが重すぎて処理が追いつかない場合、遅れを取り戻そうとして
                 // 無限にFixedUpdateが回り続けてしまうのを防ぐ。
-                if frames_processed >= 5 {
-                    eprintln!("[Warning] Server is severely lagging! Skipping fixed frames.");
+                if frames_processed >= max_ticks_per_frame {
+                    if config.warn_on_lag {
+                        eprintln!("[Warning] Server is severely lagging! Skipping fixed frames.");
+                    }
                     accumulator = Duration::ZERO;
                     break;
                 }

@@ -6,3 +6,4 @@
   - [ブロードキャストサーバーを作ろう](./broadcast/create_broadcast.md)
 - [ルーム機能が欲しい](./room/intro.md)
   - [ルーム付きサーバーを作ろう](./room/create_room.md)
+- [プラグイン](./plugins/intro.md)

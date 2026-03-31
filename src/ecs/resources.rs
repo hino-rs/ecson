@@ -11,28 +11,26 @@ use crate::prelude::NetworkEvent;
 #[derive(Resource, Default)]
 pub struct ConnectionMap(pub HashMap<u64, Entity>);
 
-/// サーバーのメインループの更新頻度（Tickレート）を管理するリソース。
-#[derive(Resource)]
-pub struct ServerTickRate(pub f64);
-
-impl Default for ServerTickRate {
-    /// デフォルトは `NORMAL` (30.0Hz) に設定されます。
-    fn default() -> Self {
-        Self::NORMAL
-    }
+/// サーバーの回転に関するコンフィグ
+#[derive(Resource, Clone)]
+pub struct ServerTimeConfig {
+    /// サーバーの目標Tickレート(Hz)
+    pub tick_rate: f64,
+    /// 1フレーム内で後れを取り戻すために実行できるFixedUpdateの最大回数
+    pub max_ticks_per_frame: u32,
+    /// 初理落ち時に警告ログを出すかどうか
+    pub warn_on_lag: bool,
 }
 
-impl ServerTickRate {
-    /// エコモード: 10Hz（処理負荷を最小限に抑えたい場合）
-    pub const ECO: Self = Self(10.0);
-    /// ハーフモード: 30Hz (ノーマルの半分)
-    pub const HALF: Self = Self(30.0);
-    /// ノーマルモード: 60Hz（一般的な状態同期）
-    pub const NORMAL: Self = Self(60.0);
-    /// 高速モード: 90Hz（アクション性が高い場合）
-    pub const HIGH: Self = Self(90.0);
-    /// リアルタイムモード: 120Hz（FPSや競技性の高いゲームなど）
-    pub const REALTIME: Self = Self(120.0);
+impl Default for ServerTimeConfig {
+    fn default() -> Self {
+        Self {
+            tick_rate: 60.0, 
+            max_ticks_per_frame: 5, 
+            warn_on_lag: false,
+        }
+        
+    }
 }
 
 /// ルーム名（`String`）から、そのルームに参加している `Entity` の一覧をO(1)で検索するためのリソース。

@@ -7,6 +7,7 @@ use crate::plugins::chat::systems::*;
 // ユーザー（アプリ開発者）に公開するフック用イベント
 // ============================================================================
 
+
 /// ユーザーがチャットルームに参加した時に発火するイベント
 #[derive(Event, Message)]
 pub struct UserJoinedRoomEvent {
