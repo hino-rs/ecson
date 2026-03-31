@@ -16,7 +16,11 @@ static NEXT_CONNECTION_ID: AtomicU64 = AtomicU64::new(1);
 /// # 引数
 /// * `addr` - サーバーがリッスンするアドレス（例: "127.0.0.1:8080"）
 /// * `ecs_tx` - Tokio側のネットワークイベントをECS側へ伝達するための送信チャンネル
-pub async fn run(addr: &str, ecs_tx: mpsc::Sender<NetworkEvent>) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn run(
+    addr: &str, 
+    ecs_tx: mpsc::Sender<NetworkEvent>,
+    client_buffer: usize,
+) -> Result<(), Box<dyn std::error::Error>> {
     let listener = TcpListener::bind(addr).await?;
     println!("WebSocket server listening on ws://{addr}");
 
@@ -29,7 +33,7 @@ pub async fn run(addr: &str, ecs_tx: mpsc::Sender<NetworkEvent>) -> Result<(), B
         println!("New connection from: {addr} (ID: {conn_id})");
 
         // ECS送信用のチャンネルをクローンし、各コネクション処理タスクへ渡す
-        tokio::spawn(ws_connection::handle_connection(stream, conn_id, ecs_tx.clone()));
+        tokio::spawn(ws_connection::handle_connection(stream, conn_id, ecs_tx.clone(), client_buffer,));
     }
     
     Ok(())

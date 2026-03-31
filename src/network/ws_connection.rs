@@ -20,6 +20,7 @@ pub async fn handle_connection(
     stream: TcpStream,
     conn_id: u64,
     ecs_tx: mpsc::Sender<NetworkEvent>,
+    client_buffer: usize, 
 ) {
     // WebSocketハンドシェイクの実行
     let ws_stream = match tokio_tungstenite::accept_async(stream).await {
@@ -36,7 +37,7 @@ pub async fn handle_connection(
     let (mut ws_sender, mut ws_receiver) = ws_stream.split();
 
     // ECS側からこの接続に対するメッセージを受け取るための専用チャンネルを作成
-    let (client_tx, mut client_rx) = mpsc::channel::<NetworkPayload>(100);
+    let (client_tx, mut client_rx) = mpsc::channel::<NetworkPayload>(client_buffer);
     
     // Read/Writeタスク間で「切断」を伝えるためのシグナル
     let cancel = CancellationToken::new();

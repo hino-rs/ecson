@@ -11,22 +11,25 @@ use crate::plugin::Plugin;
 // ネットワーク系共通処理
 // --------------------------------------------------------
 
+/// ネットワーク設定のデフォルト値
+const DEFAULT_ECS_BUFFER: usize = 1024;
+const DEFAULT_CLIENT_BUFFER: usize = 100;
+
 /// ネットワーク系プラグイン（WebSocket / WebTransport）で共通して必要な
 /// ECS側の初期化（チャンネル、リソース、システムの登録）を行います。
-fn setup_network_ecs(app: &mut FluxionApp) {
+fn setup_network_ecs(app: &mut FluxionApp, ecs_buffer: usize) {
     // 既に初期化済みの場合はスキップ
     if app.world.contains_resource::<ConnectionMap>() {
         return;
     }
 
     // TokioとECSを繋ぐMPSCチャンネルを作成
-    let (ecs_tx, ecs_rx) = mpsc::channel::<NetworkEvent>(1024);
+    let (ecs_tx, ecs_rx) = mpsc::channel::<NetworkEvent>(ecs_buffer);
     app.world.insert_resource(NetworkSender(ecs_tx));
     app.world.insert_resource(NetworkReceiver(ecs_rx));
 
-    // メッセージ系イベントリソースの初期化
+    // 初期化
     app.world.insert_resource(ConnectionMap::default());
-    
     app.add_event::<MessageReceived>();
     app.add_event::<SendMessage>();
     app.add_event::<UserDisconnected>();
@@ -52,6 +55,10 @@ fn setup_network_ecs(app: &mut FluxionApp) {
 /// Tokioランタイムの起動からECSとのブリッジ構築までを隠蔽する、WebSocketサーバー用プラグイン。
 pub struct FluxionWebSocketPlugin {
     pub address: String,
+    /// ECS受信チャンネルのバッファサイズ(全クライアント共通)
+    ecs_buffer: usize,
+    /// クライアントごとの通知チャンネルのバッファサイズ
+    client_buffer: usize,
 }
 
 impl FluxionWebSocketPlugin {
@@ -59,22 +66,39 @@ impl FluxionWebSocketPlugin {
     pub fn new(address: impl Into<String>) -> Self {
         Self {
             address: address.into(),
+            ecs_buffer: DEFAULT_ECS_BUFFER,
+            client_buffer: DEFAULT_CLIENT_BUFFER,
         }
+    }
+
+    /// ECS 受信チャンネルのバッファサイズを設定する。
+    /// 接続数が多い・高頻度メッセージが来る場合は大きくする。
+    pub fn ecs_buffer(mut self, size: usize) -> Self {
+        self.ecs_buffer = size;
+        self
+    }
+
+    /// クライアントごとの送信バッファサイズを設定する。
+    /// サーバー側の送信が詰まりやすい場合は大きくする。
+    pub fn client_buffer(mut self, size: usize) -> Self {
+        self.client_buffer = size;
+        self
     }
 }
 
 impl Plugin for FluxionWebSocketPlugin {
     fn build(self, app: &mut FluxionApp) {
-        setup_network_ecs(app);
+        setup_network_ecs(app, self.ecs_buffer);
 
         let ecs_tx = app.world.get_resource::<NetworkSender>().unwrap().0.clone();
         let addr = self.address.clone();
+        let client_buffer = self.client_buffer;
 
         // Tokioランタイムをバックグラウンドスレッドで起動し、サーバーをリッスンさせる
         std::thread::spawn(move || {
             let rt = tokio::runtime::Runtime::new().unwrap();
             rt.block_on(async {
-                if let Err(e) = crate::network::ws_server::run(&addr, ecs_tx).await {
+                if let Err(e) = crate::network::ws_server::run(&addr, ecs_tx, client_buffer).await {
                     eprintln!("Fluxion Server Error: {e}");
                 }
             });
@@ -89,27 +113,44 @@ impl Plugin for FluxionWebSocketPlugin {
 /// Tokioランタイムの起動からECSとのブリッジ構築までを隠蔽する、WebTransportサーバー用プラグイン。
 pub struct FluxionWebTransportPlugin {
     pub address: String,
+    ecs_buffer: usize,
+    client_buffer: usize,
 }
 
 impl FluxionWebTransportPlugin {
     /// 起動するアドレスを指定してプラグインを生成します。
     pub fn new(address: impl Into<String>) -> Self {
-        Self { address: address.into() }
+        Self { 
+            address: address.into(),
+            ecs_buffer: DEFAULT_ECS_BUFFER,
+            client_buffer: DEFAULT_CLIENT_BUFFER,
+        }
+    }
+
+    pub fn ecs_buffer(mut self, size: usize) -> Self {
+        self.ecs_buffer = size;
+        self
+    }
+
+    pub fn client_buffer(mut self, size: usize) -> Self {
+        self.client_buffer = size;
+        self
     }
 }
 
 impl Plugin for FluxionWebTransportPlugin {
     fn build(self, app: &mut FluxionApp) {
-        setup_network_ecs(app);
+        setup_network_ecs(app, self.ecs_buffer);
 
         let ecs_tx = app.world.get_resource::<NetworkSender>().unwrap().0.clone();
         let addr = self.address.clone();
+        let client_buffer = self.client_buffer;
 
         // Tokioランタイムをバックグラウンドスレッドで起動し、WebTransportサーバーをリッスンさせる
         std::thread::spawn(move || {
             let rt = tokio::runtime::Runtime::new().unwrap();
             rt.block_on(async {
-                if let Err(e) = crate::network::wt_server::run(&addr, ecs_tx).await {
+                if let Err(e) = crate::network::wt_server::run(&addr, ecs_tx, client_buffer).await {
                     eprintln!("WebTransport Server Error: {e}");
                 }
             });

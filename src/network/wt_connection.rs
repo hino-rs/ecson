@@ -17,11 +17,12 @@ pub async fn handle_connection(
     connection: Connection,
     conn_id: u64,
     ecs_tx: mpsc::Sender<NetworkEvent>,
+    client_buffer: usize,
 ) {
     // ECS側からこの接続に対するメッセージを受け取るための専用チャンネルを作成
-    let (client_tx, mut client_rx) = mpsc::channel::<NetworkPayload>(100);
+    let (client_tx, mut client_rx) = mpsc::channel::<NetworkPayload>(client_buffer);
 
-    // 1. ECSへ「接続完了」イベントを通知
+    // ECSへ「接続完了」イベントを通知
     // 合わせてECSから返信するための送信チャンネル（client_tx）を渡す
     if ecs_tx.send(NetworkEvent::Connected {
         id: conn_id, 
@@ -35,7 +36,7 @@ pub async fn handle_connection(
     let conn_for_recv = connection.clone();
     let ecs_tx_clone = ecs_tx.clone();
 
-    // 2. 送信（Write）タスクの生成
+    // 送信（Write）タスクの生成
     // ECSから送られてきたペイロードを、WebTransportのデータグラムとして送信します
     let send_task = tokio::spawn(async move {
         while let Some(payload) = client_rx.recv().await {
@@ -51,7 +52,7 @@ pub async fn handle_connection(
         }
     });
 
-    // 3. 受信（Read）タスクの生成
+    // 受信（Read）タスクの生成
     // クライアントから送られてきたデータグラムを受信し、ECSへ転送します
     let recv_task = tokio::spawn(async move {
         // データグラムの受信待ちループ

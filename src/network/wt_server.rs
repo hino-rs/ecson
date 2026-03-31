@@ -19,8 +19,12 @@ static NEXT_CONNECTION_ID: AtomicU64 = AtomicU64::new(1);
 /// # 引数
 /// * `addr` - サーバーがリッスンするアドレス（例: "127.0.0.1:4433"）
 /// * `ecs_tx` - Tokio側のネットワークイベントをECS側へ伝達するための送信チャンネル
-pub async fn run(addr: &str, ecs_tx: mpsc::Sender<NetworkEvent>) -> Result<(), Box<dyn std::error::Error>> {
-    // 1. ローカル開発用の自己署名証明書（Self-signed Certificate）を生成
+pub async fn run(
+    addr: &str, 
+    ecs_tx: mpsc::Sender<NetworkEvent>, 
+    client_buffer: usize,
+) -> Result<(), Box<dyn std::error::Error>> {
+    // ローカル開発用の自己署名証明書（Self-signed Certificate）を生成
     let identity = Identity::self_signed(["localhost", "127.0.0.1", "::1"]).unwrap();
 
     // クライアント側で証明書の検証をパス（またはハッシュ照合）するために必要なハッシュ値を出力
@@ -29,7 +33,7 @@ pub async fn run(addr: &str, ecs_tx: mpsc::Sender<NetworkEvent>) -> Result<(), B
         identity.certificate_chain().as_slice()[0].hash().fmt(wtransport::tls::Sha256DigestFmt::BytesArray)
     );
 
-    // 2. WebTransportサーバーの設定
+    // WebTransportサーバーの設定
     let config = ServerConfig::builder()
         .with_bind_address(addr.parse()?)
         .with_identity(identity) 
@@ -39,7 +43,7 @@ pub async fn run(addr: &str, ecs_tx: mpsc::Sender<NetworkEvent>) -> Result<(), B
     let endpoint = Endpoint::server(config)?;
     println!("WebTransport server listening on https://{addr}");
 
-    // 3. クライアントからの接続待ちループ
+    // クライアントからの接続待ちループ
     loop {
         // 新しい接続要求（IncomingSession）を待機
         let incoming_session = endpoint.accept().await;
@@ -60,7 +64,7 @@ pub async fn run(addr: &str, ecs_tx: mpsc::Sender<NetworkEvent>) -> Result<(), B
                             println!("New WebTransport connection established (ID: {conn_id})");
                             
                             // (3) 確立されたコネクションの処理を `wt_connection::handle_connection` へ委譲
-                            wt_connection::handle_connection(connection, conn_id, ecs_tx_clone).await;
+                            wt_connection::handle_connection(connection, conn_id, ecs_tx_clone, client_buffer,).await;
                         }
                         Err(e) => eprintln!("WebTransport session accept error for ID {conn_id}: {e}"),
                     }

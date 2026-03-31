@@ -73,7 +73,7 @@ impl FluxionApp {
         println!("FluxionApp🚀 Started.");
 
         // =========================================================
-        // 1. Startup スケジュールの実行（サーバー起動時に1回だけ）
+        // Startup スケジュールの実行（サーバー起動時に1回だけ）
         // =========================================================
         if let Some(startup_schedule) = self.schedules.get_mut(Startup) {
             startup_schedule.run(&mut self.world);
@@ -102,14 +102,14 @@ impl FluxionApp {
             accumulator += delta_time;
 
             // -----------------------------------------------------
-            // 2. Update スケジュールの実行（毎フレーム実行）
+            // Update スケジュールの実行（毎フレーム実行）
             // -----------------------------------------------------
             if let Some(update_schedule) = self.schedules.get_mut(Update) {
                 update_schedule.run(&mut self.world);
             }
 
             // -----------------------------------------------------
-            // 3. FixedUpdate スケジュールの実行（固定時間ごとに実行）
+            // FixedUpdate スケジュールの実行（固定時間ごとに実行）
             // -----------------------------------------------------
             let mut frames_processed = 0;
             while accumulator >= fixed_timestep {
@@ -131,7 +131,7 @@ impl FluxionApp {
                 }
             }
             // -----------------------------------------------------
-            // 4. CPU負荷軽減のためのスリープ
+            // CPU負荷軽減のためのスリープ
             // -----------------------------------------------------
             let elapsed_since_current = current_time.elapsed();
             if elapsed_since_current < fixed_timestep {
