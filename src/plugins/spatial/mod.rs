@@ -1,42 +1,26 @@
 use bevy_ecs::prelude::*;
 use crate::prelude::*;
+
+pub mod components;
+pub mod events;
+pub mod math;
 mod systems;
-use systems::*;
+
+pub use components::*;
+pub use events::*;
 
 // ============================================================================
-// コンポーネント
+// 共通リソース
 // ============================================================================
 
-/// 2D 空間上のクライアント位置
-#[derive(Component, Clone, Debug, Default)]
-pub struct Position2D {
-    pub x: f32,
-    pub y: f32,
-}
-
-/// 3D 空間上のクライアント位置
-#[derive(Component, Clone, Debug, Default)]
-pub struct Position3D {
-    pub x: f32,
-    pub y: f32,
-    pub z: f32,
-}
-
-/// クライアントが属するゾーン/チャンク（空間分割最適化用）
-#[derive(Component, Clone, Debug, Default, PartialEq, Eq, Hash)]
-pub struct SpatialZone {
-    pub zone_x: i32,
-    pub zone_y: i32,
-}
-
-// ============================================================================
-// リソース
-// ============================================================================
-
-/// 空間プラグインの設定
+/// 空間プラグイン共通の設定
+///
+/// # ゾーンサイズの制約
+/// `zone_size >= interest_radius / 2` を守ること。
+/// これより小さいと隣接ゾーンのみのチェックでは AOI 漏れが発生する。
 #[derive(Resource)]
 pub struct SpatialConfig {
-    /// 近接検索の最大距離
+    /// AOI（近接通知）の最大距離
     pub interest_radius: f32,
     /// ゾーンのセルサイズ
     pub zone_size: f32,
@@ -46,59 +30,51 @@ impl Default for SpatialConfig {
     fn default() -> Self {
         Self {
             interest_radius: 100.0,
-            zone_size: 50.0,
+            zone_size: 50.0, // >= interest_radius / 2 を満たす
         }
     }
 }
 
 // ============================================================================
-// イベント
+// Spatial2DPlugin  （XY 平面）
 // ============================================================================
 
-/// クライアントが移動したときに発火
-#[derive(Message)]
-pub struct ClientMovedEvent {
-    pub entity: Entity,
-    pub x: f32,
-    pub y: f32,
-    pub z: Option<f32>,
+/// 2D 空間の AOI・位置同期プラグイン
+///
+/// # 使用コンポーネント
+/// - [`Position2D`]
+/// - [`SpatialZone2D`]
+///
+/// # Example
+/// ```no_run
+/// app.add_plugins(Spatial2DPlugin::new().interest_radius(200.0));
+/// ```
+pub struct Spatial2DPlugin {
+    interest_radius: f32,
+    zone_size: f32,
 }
 
-// ============================================================================
-// プラグイン
-// ============================================================================
-
-pub struct SpatialPlugin {
-    pub interest_radius: f32,
-    pub zone_size: f32,
-}
-
-impl Default for SpatialPlugin {
+impl Default for Spatial2DPlugin {
     fn default() -> Self {
-        Self {
-            interest_radius: 100.0,
-            zone_size: 50.0,
-        }
+        Self { interest_radius: 100.0, zone_size: 50.0 }
     }
 }
 
-impl SpatialPlugin {
-    pub fn new() -> Self {
-        Self::default()
-    }
+impl Spatial2DPlugin {
+    pub fn new() -> Self { Self::default() }
 
-    pub fn interest_radius(mut self, radius: f32) -> Self {
-        self.interest_radius = radius;
+    pub fn interest_radius(mut self, r: f32) -> Self {
+        self.interest_radius = r;
         self
     }
 
-    pub fn zone_size(mut self, size: f32) -> Self {
-        self.zone_size = size;
+    pub fn zone_size(mut self, s: f32) -> Self {
+        self.zone_size = s;
         self
     }
 }
 
-impl Plugin for SpatialPlugin {
+impl Plugin for Spatial2DPlugin {
     fn build(self, app: &mut EcsonApp) {
         app.world.insert_resource(SpatialConfig {
             interest_radius: self.interest_radius,
@@ -106,13 +82,145 @@ impl Plugin for SpatialPlugin {
         });
 
         app.add_event::<ClientMovedEvent>();
+        app.add_event::<ClientZoneChangedEvent>();
 
-        app.add_systems(Update, parse_move_messages_system);
+        app.add_systems(Update, (
+            systems::setup_spatial_2d_system,
+            systems::parse_move_messages_system,
+        ));
         app.add_systems(
             FixedUpdate,
             (
-                handle_client_move_system,
-                broadcast_nearby_positions_system,
+                systems::handle_move_2d_system,
+                systems::broadcast_nearby_2d_system,
+            ),
+        );
+    }
+}
+
+// ============================================================================
+// Spatial3DFlatPlugin  （XZ 平面 AOI、Y軸は位置のみ保持）
+// ============================================================================
+
+/// 地上系 3D ゲーム向けの AOI・位置同期プラグイン
+///
+/// `Position3D` で Y 軸の座標を保持しつつ、
+/// AOI のゾーン計算は XZ 平面（`SpatialZone2D` 流用）で行う。
+/// 隣接ゾーン数が最大 9 で済むため、完全 3D より低コスト。
+///
+/// # ユースケース
+/// - 地上を移動する RPG / MOBA
+/// - マインクラフト的なワールド（高さ方向は AOI 不要）
+///
+/// # 使用コンポーネント
+/// - [`Position3D`]
+/// - [`SpatialZone2D`]（XZ として利用、zone_y = chunk_z）
+pub struct Spatial3DFlatPlugin {
+    interest_radius: f32,
+    zone_size: f32,
+}
+
+impl Default for Spatial3DFlatPlugin {
+    fn default() -> Self {
+        Self { interest_radius: 100.0, zone_size: 50.0 }
+    }
+}
+
+impl Spatial3DFlatPlugin {
+    pub fn new() -> Self { Self::default() }
+
+    pub fn interest_radius(mut self, r: f32) -> Self {
+        self.interest_radius = r;
+        self
+    }
+
+    pub fn zone_size(mut self, s: f32) -> Self {
+        self.zone_size = s;
+        self
+    }
+}
+
+impl Plugin for Spatial3DFlatPlugin {
+    fn build(self, app: &mut EcsonApp) {
+        app.world.insert_resource(SpatialConfig {
+            interest_radius: self.interest_radius,
+            zone_size: self.zone_size,
+        });
+
+        app.add_event::<ClientMovedEvent>();
+        app.add_event::<ClientZoneChangedEvent>();
+
+        app.add_systems(Update, (
+            systems::setup_spatial_3d_flat_system,
+            systems::parse_move_messages_system,
+        ));
+        app.add_systems(
+            FixedUpdate,
+            (
+                systems::handle_move_3d_flat_system,
+                systems::broadcast_nearby_3d_flat_system,
+            ),
+        );
+    }
+}
+
+// ============================================================================
+// Spatial3DPlugin  （XYZ ボリューメトリック）
+// ============================================================================
+
+/// 完全 3D 空間の AOI・位置同期プラグイン
+///
+/// XYZ すべての軸でゾーン分割を行う。隣接ゾーンが最大 27 になるため、
+/// `Spatial3DFlatPlugin` より AOI チェックのコストが高い。
+/// 宇宙ゲーム・飛行シム・多層ダンジョン等で使用する。
+///
+/// # 使用コンポーネント
+/// - [`Position3D`]
+/// - [`SpatialZone3D`]
+pub struct Spatial3DPlugin {
+    interest_radius: f32,
+    zone_size: f32,
+}
+
+impl Default for Spatial3DPlugin {
+    fn default() -> Self {
+        Self { interest_radius: 100.0, zone_size: 50.0 }
+    }
+}
+
+impl Spatial3DPlugin {
+    pub fn new() -> Self { Self::default() }
+
+    pub fn interest_radius(mut self, r: f32) -> Self {
+        self.interest_radius = r;
+        self
+    }
+
+    pub fn zone_size(mut self, s: f32) -> Self {
+        self.zone_size = s;
+        self
+    }
+}
+
+impl Plugin for Spatial3DPlugin {
+    fn build(self, app: &mut EcsonApp) {
+        app.world.insert_resource(SpatialConfig {
+            interest_radius: self.interest_radius,
+            zone_size: self.zone_size,
+        });
+
+        app.add_event::<ClientMovedEvent>();
+        app.add_event::<ClientZoneChangedEvent>();
+
+        app.add_systems(Update, (
+            systems::setup_spatial_3d_system,
+            systems::parse_move_messages_system,
+        ));
+        app.add_systems(
+            FixedUpdate,
+            (
+                systems::handle_move_3d_system,
+                systems::broadcast_nearby_3d_system,
             ),
         );
     }
