@@ -24,6 +24,12 @@ pub struct LobbyInfo {
     pub is_public: bool,
 }
 
+#[derive(Resource)]
+pub struct LobbyConfig {
+    pub default_max_members: u32,
+}
+
+
 // ============================================================================
 // コンポーネント
 // ============================================================================
@@ -100,10 +106,16 @@ impl LobbyPlugin {
 
 impl Plugin for LobbyPlugin {
     fn build(self, app: &mut EcsonApp) {
+        // LobbyConfig（新規）
+        app.world.insert_resource(LobbyConfig {
+            default_max_members: self.default_max_members,
+        });
+
         if !app.world.contains_resource::<LobbyMap>() {
             app.world.insert_resource(LobbyMap::default());
         }
 
+        // イベント登録（変更なし）
         app.add_event::<LobbyCommand>();
         app.add_event::<PlayerJoinedLobbyEvent>();
         app.add_event::<PlayerLeftLobbyEvent>();
