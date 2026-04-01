@@ -13,6 +13,14 @@
 - `ChatRoomPlugin`
 - `ChatFullPlugin`
 
+`ecson::plugins::heartbeat`より、
+
+- `HeartbeatPlugin`
+
+`ecson::plugins::presence`より、
+
+- `PresencePlugin`
+
 ## chat系プラグインを使ってみよう
 
 実は、前章で作ってきたようなサーバーはプラグインによって爆速で開発できます。
