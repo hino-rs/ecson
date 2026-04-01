@@ -6,7 +6,7 @@ use wtransport::{Endpoint, ServerConfig};
 use crate::network::channels::NetworkEvent;
 use std::sync::atomic::{AtomicU64, Ordering};
 use crate::network::wt_connection;
-use log::{info, error};
+use tracing::{info, error};
 
 /// クライアント接続ごとに一意のIDを生成するための、スレッドセーフなカウンター。
 static NEXT_CONNECTION_ID: AtomicU64 = AtomicU64::new(1);

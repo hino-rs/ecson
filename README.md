@@ -1,1 +1,1 @@
-[ja](https://github.com/rustyrs/ecson/blob/main/README.ja.md)
+[ja](https://github.com/hino-rs/ecson/blob/main/README.ja.md)

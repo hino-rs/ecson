@@ -1,6 +1,6 @@
 //! WebSocketサーバーの起動と、クライアント接続の受け入れを管理するモジュールです。
 
-use log::info;
+use tracing::info;
 use tokio::net::TcpListener;
 use tokio::sync::mpsc;
 use crate::network::{ws_connection, channels::NetworkEvent};

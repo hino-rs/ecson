@@ -11,7 +11,7 @@ use bevy_ecs::{
     system::{Commands, Query, ResMut},
 };
 use tokio::sync::mpsc;
-use log::{error, info};
+use tracing::{error, info};
 
 /// Tokio側から送られてくるネットワークイベントを受信するためのリソースラッパー。
 #[derive(Resource)]

@@ -49,12 +49,12 @@ MITライセンス
 2. broadcast_chat.rs
 3. room_chat.rs
 
-全て[examples](https://github.com/rustyrs/ecson/tree/main/examples)に入っています。
+全て[examples](https://github.com/hino-rs/ecson/tree/main/examples)に入っています。
 /frontendにテスト用のHTMLもあるのでぜひ。
 
 ## ドキュメント
 
-- [Ecsonチュートリアル](https://rustyrs.github.io/ecson/)
+- [Ecsonチュートリアル](https://hino-rs.github.io/ecson/)
 - [Ecson ECS解説](#) - 予定
 - [Ecson リファレンス](#) - 予定
 

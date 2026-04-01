@@ -4,7 +4,7 @@ use crate::network::channels::*;
 use tokio::sync::mpsc;
 use tokio_util::sync::CancellationToken;
 use wtransport::Connection;
-use log::info;
+use tracing::info;
 
 /// 個別のWebTransport接続を処理し、ECS側との双方向通信を管理します。
 ///

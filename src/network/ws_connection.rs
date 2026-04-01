@@ -6,7 +6,7 @@ use tokio::net::TcpStream;
 use tokio::sync::mpsc;
 use tokio_tungstenite::tungstenite::Message;
 use tokio_util::sync::CancellationToken;
-use log::{error, info};
+use tracing::{error, info};
 
 /// 個別のWebSocket接続を処理し、ECS側との双方向通信を管理します。
 ///

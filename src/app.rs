@@ -12,8 +12,8 @@ use bevy_ecs::{
     system::ScheduleSystem,
     world::World,
 };
-use log::{error, info, warn};
 use std::time::{Duration, Instant};
+use tracing::{error, info, warn};
 
 // ============================================================================
 // スケジュールラベルの定義
