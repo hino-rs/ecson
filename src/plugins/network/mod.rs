@@ -158,26 +158,130 @@ impl Plugin for EcsonWebTransportDevPlugin {
 }
 
 // --------------------------------------------------------
-// WebTransport 本番用 プラグイン
+// WebSocket TLS（WSS）本番用プラグイン
 // --------------------------------------------------------
 
-// pub struct EcsonWebTransportPlugin {
-//     address: String,
-//     identity: Identity,
-//     ecs_buffer: usize,
-//     client_buffer: usize,
-// }
+/// 証明書ファイルを指定して WSS サーバーを起動するプラグイン。
+pub struct EcsonWebSocketTlsPlugin {
+    address:  String,
+    cert_path: String,
+    key_path:  String,
+    ecs_buffer: usize,
+    client_buffer: usize,
+}
 
-// impl EcsonWebTransportPlugin {
-//     /// 証明書ファイルを指定する
-//     pub fn new(address: impl Into<String>) -> Self {
-//         todo!()
-//     }
+impl EcsonWebSocketTlsPlugin {
+    /// 起動アドレスと証明書パスを指定してプラグインを生成します。
+    ///
+    /// # 例
+    /// ```rust
+    /// EcsonWebSocketTlsPlugin::new(
+    ///     "0.0.0.0:8443",
+    ///     "/etc/letsencrypt/live/example.com/fullchain.pem",
+    ///     "/etc/letsencrypt/live/example.com/privkey.pem",
+    /// )
+    /// ```
+    pub fn new(
+        address:   impl Into<String>,
+        cert_path: impl Into<String>,
+        key_path:  impl Into<String>,
+    ) -> Self {
+        Self {
+            address:       address.into(),
+            cert_path:     cert_path.into(),
+            key_path:      key_path.into(),
+            ecs_buffer:    DEFAULT_ECS_BUFFER,
+            client_buffer: DEFAULT_CLIENT_BUFFER,
+        }
+    }
 
-//     pub fn with_cert(
-//         address: impl Into<String>,
-//         cert_path: impl AsRef<Path>,
-//         key_path: impl AsRef<Path>,
-//     ) -> Result<>{
-//     }
-// }
+    pub fn ecs_buffer(mut self, size: usize) -> Self {
+        self.ecs_buffer = size; self
+    }
+    pub fn client_buffer(mut self, size: usize) -> Self {
+        self.client_buffer = size; self
+    }
+}
+
+impl Plugin for EcsonWebSocketTlsPlugin {
+    fn build(self, app: &mut EcsonApp) {
+        setup_network_ecs(app, self.ecs_buffer);
+
+        let ecs_tx = app.world.get_resource::<NetworkSender>().unwrap().0.clone();
+        let addr          = self.address.clone();
+        let client_buffer = self.client_buffer;
+
+        // 起動時に証明書を読み込んで TlsAcceptor を構築
+        let acceptor = crate::network::tls::build_tls_acceptor(
+            &self.cert_path,
+            &self.key_path,
+        ).expect("TLS証明書の読み込みに失敗しました");
+
+        std::thread::spawn(move || {
+            let rt = tokio::runtime::Runtime::new().unwrap();
+            rt.block_on(async {
+                if let Err(e) = crate::network::wss_server::run(
+                    &addr, acceptor, ecs_tx, client_buffer,
+                ).await {
+                    error!("Ecson WSS Server Error: {e}");
+                }
+            });
+        });
+    }
+}
+
+// --------------------------------------------------------
+// WebSocket TLS 開発用プラグイン（自己署名証明書を自動生成）
+// --------------------------------------------------------
+
+/// 証明書ファイル不要。自己署名証明書をメモリ上で自動生成して WSS を起動します。
+///
+/// ⚠️ 開発・テスト専用。本番では EcsonWebSocketTlsPlugin を使用してください。
+pub struct EcsonWebSocketTlsDevPlugin {
+    address: String,
+    ecs_buffer: usize,
+    client_buffer: usize,
+}
+
+impl EcsonWebSocketTlsDevPlugin {
+    pub fn new(address: impl Into<String>) -> Self {
+        Self {
+            address:       address.into(),
+            ecs_buffer:    DEFAULT_ECS_BUFFER,
+            client_buffer: DEFAULT_CLIENT_BUFFER,
+        }
+    }
+
+    pub fn ecs_buffer(mut self, size: usize) -> Self {
+        self.ecs_buffer = size; self
+    }
+    pub fn client_buffer(mut self, size: usize) -> Self {
+        self.client_buffer = size; self
+    }
+}
+
+impl Plugin for EcsonWebSocketTlsDevPlugin {
+    fn build(self, app: &mut EcsonApp) {
+        setup_network_ecs(app, self.ecs_buffer);
+
+        let ecs_tx        = app.world.get_resource::<NetworkSender>().unwrap().0.clone();
+        let addr          = self.address.clone();
+        let client_buffer = self.client_buffer;
+
+        // 自己署名証明書をメモリ上で生成
+        let acceptor = crate::network::tls::build_self_signed_acceptor(
+            vec!["localhost".to_string(), "127.0.0.1".to_string()]
+        ).expect("自己署名証明書の生成に失敗しました");
+
+        std::thread::spawn(move || {
+            let rt = tokio::runtime::Runtime::new().unwrap();
+            rt.block_on(async {
+                if let Err(e) = crate::network::wss_server::run(
+                    &addr, acceptor, ecs_tx, client_buffer,
+                ).await {
+                    error!("Ecson WSS Dev Server Error: {e}");
+                }
+            });
+        });
+    }
+}

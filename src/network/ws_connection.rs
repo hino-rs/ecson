@@ -2,7 +2,7 @@
 
 use crate::network::channels::*;
 use futures_util::{SinkExt, StreamExt};
-use tokio::net::TcpStream;
+use tokio::io::{AsyncRead, AsyncWrite};
 use tokio::sync::mpsc;
 use tokio_tungstenite::tungstenite::Message;
 use tokio_util::sync::CancellationToken;
@@ -17,12 +17,14 @@ use tracing::{error, info};
 /// * `stream` - 受け入れたTCPストリーム
 /// * `conn_id` - この接続に割り当てられた一意のID
 /// * `ecs_tx` - ECS側へネットワークイベント（接続、切断、メッセージ受信）を送るためのチャンネル
-pub async fn handle_connection(
-    stream: TcpStream,
+pub async fn handle_connection<S>(
+    stream: S,
     conn_id: u64,
     ecs_tx: mpsc::Sender<NetworkEvent>,
     client_buffer: usize,
-) {
+) where
+    S: AsyncRead + AsyncWrite + Unpin + 'static + std::marker::Send,
+{
     // WebSocketハンドシェイクの実行
     let ws_stream = match tokio_tungstenite::accept_async(stream).await {
         Ok(ws) => ws,
