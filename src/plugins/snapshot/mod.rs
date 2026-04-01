@@ -26,12 +26,27 @@ impl Default for SnapshotConfig {
 }
 
 /// 直前のスナップショット状態を保持するリソース
-#[derive(Resource, Default)]
+#[derive(Resource)]
 pub struct SnapshotState {
-    /// シーケンス番号（単調増加）
     pub sequence: u64,
-    /// 最後に送信したスナップショットのバイト列（差分計算用）
     pub last_snapshot: Vec<u8>,
+    /// collect → broadcast 間のバッファ
+    pub pending: Vec<u8>,
+    /// インターバル計測用タイマー
+    pub last_sent: std::time::Instant,
+}
+
+impl Default for SnapshotState {
+    fn default() -> Self {
+        Self {
+            sequence: 0,
+            last_snapshot: Vec::new(),
+            pending: Vec::new(),
+            // 起動直後に最初のスナップショットが即送信されるよう過去時刻で初期化
+            last_sent: std::time::Instant::now()
+                - std::time::Duration::from_secs(3600),
+        }
+    }
 }
 
 // ============================================================================
