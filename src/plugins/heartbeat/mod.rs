@@ -14,6 +14,10 @@ pub struct HeartbeatConfig {
     pub interval_secs: f32,
     /// この秒数以内に Pong が返らなければ切断とみなす
     pub timeout_secs: f32,
+    /// ping 識別メッセージ
+    pub ping_payload: String,
+    /// pong 識別メッセージ
+    pub pong_payload: String,
 }
 
 impl Default for HeartbeatConfig {
@@ -21,6 +25,8 @@ impl Default for HeartbeatConfig {
         Self {
             interval_secs: 10.0,
             timeout_secs: 30.0,
+            ping_payload: "__ping__".into(),
+            pong_payload: "__pong__".into(),
         }
     }
 }
@@ -33,9 +39,11 @@ impl Default for HeartbeatConfig {
 #[derive(Component)]
 pub struct HeartbeatState {
     /// 最後に Pong を受け取った（または接続した）時刻
-    pub last_pong_at: std::time::Instant,
+    last_pong_at: std::time::Instant,
     /// 未応答の Ping 数
-    pub pending_pings: u32,
+    pending_pings: u32,
+    /// 前回 Ping を送った時刻
+    last_ping_at: std::time::Instant,
 }
 
 impl Default for HeartbeatState {
@@ -43,6 +51,7 @@ impl Default for HeartbeatState {
         Self {
             last_pong_at: std::time::Instant::now(),
             pending_pings: 0,
+            last_ping_at: std::time::Instant::now(),
         }
     }
 }
@@ -64,6 +73,8 @@ pub struct ClientTimedOutEvent {
 pub struct HeartbeatPlugin {
     pub interval_secs: f32,
     pub timeout_secs: f32,
+    pub ping_payload: String,
+    pub pong_payload: String,
 }
 
 impl Default for HeartbeatPlugin {
@@ -71,6 +82,8 @@ impl Default for HeartbeatPlugin {
         Self {
             interval_secs: 10.0,
             timeout_secs: 30.0,
+            ping_payload: "__ping__".into(),
+            pong_payload: "__pong__".into(),
         }
     }
 }
@@ -96,11 +109,16 @@ impl Plugin for HeartbeatPlugin {
         app.world.insert_resource(HeartbeatConfig {
             interval_secs: self.interval_secs,
             timeout_secs: self.timeout_secs,
+            ping_payload: self.ping_payload,
+            pong_payload: self.pong_payload,
         });
 
         app.add_event::<ClientTimedOutEvent>();
 
-        app.add_systems(Update, receive_pong_system);
+        app.add_systems(Update, (
+            setup_heartbeat_system,
+            receive_pong_system,
+        ));
         app.add_systems(
             FixedUpdate,
             (
