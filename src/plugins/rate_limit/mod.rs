@@ -126,7 +126,7 @@ impl Plugin for RateLimitPlugin {
 
         app.add_event::<RateLimitExceededEvent>();
 
-        app.add_systems(Update, check_rate_limit_system);
+        app.add_systems(Update, (setup_rate_limit_system, check_rate_limit_system));
         app.add_systems(FixedUpdate, reset_rate_limit_windows_system);
     }
 }
