@@ -16,14 +16,13 @@ Ecsonはこの問題を解決するため、パラダイムを以下の様に転
 
 ## ログ出力
 
-Ecsonは`log`クレートを使用しています。ログを表示するには`env_logger`などをアプリ側で初期化してください。
+Ecsonは`tracing`クレートを使用しています。ログを表示するには`tracing-subscriber`などをアプリ側で初期化してください。
 
 ## 開発状況
 
 ⚠️ 本プロジェクトは実験段階のものです。⚠️
 
 - 本番環境向けではありません
-- TLS通信は未実装です
 - API仕様は頻繁に変更される可能性があります
 
 ## ライセンス
@@ -55,7 +54,7 @@ MITライセンス
 ## ドキュメント
 
 - [Ecsonチュートリアル](https://hino-rs.github.io/ecson/)
-- [Ecson ECS解説](#) - 予定
+- [Ecson ECS解説](https://github.com/hino-rs/ecson/tree/main/docs/ECS.md)
 - [Ecson リファレンス](#) - 予定
 
 ## 謝辞

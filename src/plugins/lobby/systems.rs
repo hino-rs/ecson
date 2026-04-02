@@ -37,7 +37,7 @@ pub fn parse_lobby_messages_system(
                     .first()
                     .and_then(|s| s.parse::<u32>().ok())
                     .unwrap_or(config.default_max_members);
-                let is_public = !tail.get(1).is_some_and(|s| *s == "private");
+                let is_public = tail.get(1).is_none_or(|s| *s == "private");
                 LobbyCommand::Create {
                     entity: msg.entity,
                     name: (*name).to_string(),

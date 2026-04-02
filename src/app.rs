@@ -13,7 +13,7 @@ use bevy_ecs::{
     world::World,
 };
 use std::time::{Duration, Instant};
-use tracing::{error, info, warn};
+use tracing::{info, warn};
 
 // ============================================================================
 // スケジュールラベルの定義

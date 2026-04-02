@@ -31,15 +31,3 @@ fn main() {
         .add_systems(Update, broadcast_system)
         .run();
 }
-
-// 0.0.5
-
-// use ecson::plugins::chat::*;
-// use ecson::prelude::*;
-
-// fn main() {
-//     EcsonApp::new()
-//         .add_plugins(EcsonWebSocketPlugin::new("127.0.0.1:8080"))
-//         .add_plugins(ChatCorePlugin)
-//         .run();
-// }

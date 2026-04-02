@@ -4,7 +4,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use tokio::net::TcpListener;
 use tokio::sync::mpsc;
 use tokio_rustls::TlsAcceptor;
-use tracing::{error, info, warn};
+use tracing::{info, warn};
 
 use crate::network::{channels::NetworkEvent, ws_connection};
 

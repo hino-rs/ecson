@@ -6,7 +6,7 @@ use crate::ecs::systems::NetworkReceiver;
 use crate::network::channels::NetworkEvent;
 use crate::plugin::Plugin;
 use tokio::sync::mpsc;
-use tracing::{error, info};
+use tracing::{error};
 
 // --------------------------------------------------------
 // ネットワーク系共通処理

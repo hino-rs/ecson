@@ -20,17 +20,12 @@ pub struct PresenceMap {
 // ============================================================================
 
 /// クライアントエンティティの在席状態を表すコンポーネント
-#[derive(Component, Clone, Debug, PartialEq, Eq)]
+#[derive(Component, Clone, Debug, PartialEq, Eq, Default)]
 pub enum PresenceStatus {
+    #[default]
     Online,
     Away,
     Busy,
-}
-
-impl Default for PresenceStatus {
-    fn default() -> Self {
-        Self::Online
-    }
 }
 
 impl fmt::Display for PresenceStatus {

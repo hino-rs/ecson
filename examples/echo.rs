@@ -1,6 +1,5 @@
-// v0.0.5
-
 use ecson::prelude::*;
+use tracing::{Level, span};
 
 // Define System
 fn echo_system(
@@ -16,6 +15,8 @@ fn echo_system(
 }
 
 fn main() {
+    tracing_subscriber::fmt::init();
+
     EcsonApp::new()
         .add_plugins((
             EcsonWebSocketPlugin::new("127.0.0.1:8080"),

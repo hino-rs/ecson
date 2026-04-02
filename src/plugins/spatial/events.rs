@@ -48,7 +48,7 @@ pub struct ClientZoneChangedEvent {
 /// - "/move 1.0 2.0 3.0"   → Move3D
 /// - それ以外               → None
 pub fn parse_move_command(text: &str) -> Option<MovePayload> {
-    let mut parts = text.trim().split_whitespace();
+    let mut parts = text.split_whitespace();
 
     if parts.next()? != "/move" {
         return None;
