@@ -68,7 +68,7 @@ impl EcsonApp {
 
     /// サーバーのメインループを開始します。
     pub fn run(&mut self) {
-        println!("EcsonApp Started🚀");
+        info!("EcsonApp Started🚀");
 
         // =========================================================
         // Startup スケジュールの実行（サーバー起動時に1回だけ）
@@ -86,12 +86,13 @@ impl EcsonApp {
 
         let fixed_timestep = Duration::from_secs_f64(1.0 / config.tick_rate);
         let max_ticks_per_frame = config.max_ticks_per_frame;
+        let update_sleep = Duration::from_micros((config.update_sleep * 1000.0) as u64);
 
         let mut previous_time = Instant::now();
         let mut accumulator = Duration::ZERO;
 
         // =========================================================
-        // メインループ
+        // メインループ（Update は毎フレーム高速回転）
         // =========================================================
         loop {
             let current_time = Instant::now();
@@ -101,7 +102,8 @@ impl EcsonApp {
             accumulator += delta_time;
 
             // -----------------------------------------------------
-            // Update スケジュールの実行（毎フレーム実行）
+            // Update スケジュールの実行（毎フレーム・受信ポーリング）
+            // sleep なしで可能な限り高速に回す。
             // -----------------------------------------------------
             if let Some(update_schedule) = self.schedules.get_mut(Update) {
                 update_schedule.run(&mut self.world);
@@ -109,17 +111,17 @@ impl EcsonApp {
 
             // -----------------------------------------------------
             // FixedUpdate スケジュールの実行（固定時間ごとに実行）
+            // accumulator が溜まった分だけまとめて処理する。
             // -----------------------------------------------------
-            let mut frames_processed = 0;
+            let mut ticks = 0;
             while accumulator >= fixed_timestep {
                 if let Some(fixed_update) = self.schedules.get_mut(FixedUpdate) {
                     fixed_update.run(&mut self.world);
                 }
                 accumulator -= fixed_timestep;
-                frames_processed += 1;
+                ticks += 1;
 
-                // 無限ループ対策
-                if frames_processed >= max_ticks_per_frame {
+                if ticks >= max_ticks_per_frame {
                     if config.warn_on_lag {
                         warn!("[Warning] Server is severely lagging! Skipping fixed frames.");
                     }
@@ -127,13 +129,14 @@ impl EcsonApp {
                     break;
                 }
             }
+
             // -----------------------------------------------------
             // CPU負荷軽減のためのスリープ
+            // fixed_timestep ではなく固定の短い間隔でスリープする。
+            // Update は高速に回しつつ、CPU を無駄に食い潰さない。
+            // 例: 1ms スリープ → Update は最大 ~1000回/秒 まで回る。
             // -----------------------------------------------------
-            let elapsed_since_current = current_time.elapsed();
-            if elapsed_since_current < fixed_timestep {
-                std::thread::sleep(fixed_timestep - elapsed_since_current);
-            }
+            std::thread::sleep(update_sleep);
         }
     }
 
