@@ -1,0 +1,4 @@
+[package]
+name = "ecson_macros"
+version = "0.0.5"
+edition = "2024"

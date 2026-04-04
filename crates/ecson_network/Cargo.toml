@@ -1,0 +1,19 @@
+[package]
+name = "ecson_network"
+version = "0.0.5"
+edition = "2024"
+
+[dependencies]
+ecson_core = { path = "../ecson_core" }
+ecson_ecs = { path = "../ecson_ecs" }
+bevy_ecs = "0.18.1"
+futures-util = "0.3.32"
+rcgen = "0.14.7"
+rustls = "0.23.37"
+rustls-pemfile = "2.2.0"
+tokio = { version = "1.50.0", features = ["full"] }
+tokio-rustls = "0.26.4"
+tokio-tungstenite = "0.29.0"
+tokio-util = "0.7.18"
+tracing = "0.1.44"
+wtransport = { version = "0.7.0", features = ["self-signed"] }

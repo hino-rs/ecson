@@ -1,24 +1,9 @@
-[package]
-name = "ecson"
-version = "0.0.5"
-edition = "2024"
-license = "MIT"
-repository = "https://github.com/hino-rs/ecson"
-keywords = ["gameserver", "ecs", "websocket", "realtime", "webtransport"]
-categories = ["network-programming", "asynchronous"]
-description = "ECS-driven stateful bidirectional server framework for Rust"
-
-[dependencies]
-bevy_ecs = "0.18.1"
-env_logger = "0.11.10"
-futures-util = "0.3.32"
-rcgen = "0.14.7"
-rustls = "0.23.37"
-rustls-pemfile = "2.2.0"
-tokio = { version = "1.50.0", features = ["full"] }
-tokio-rustls = "0.26.4"
-tokio-tungstenite = "0.29.0"
-tokio-util = "0.7.18"
-tracing = "0.1.44"
-tracing-subscriber = "0.3.23"
-wtransport = { version = "0.7.0", features = ["self-signed"] }
+[workspace]
+resolver = "2"
+members = [
+    "crates/ecson_core",
+    "crates/ecson_ecs",
+    "crates/ecson_network",
+    "crates/ecson_macros",
+    "ecson",
+]

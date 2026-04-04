@@ -1,0 +1,19 @@
+[package]
+name = "ecson"
+version = "0.0.5"
+edition = "2024"
+license = "MIT"
+repository = "https://github.com/hino-rs/ecson"
+keywords = ["gameserver", "ecs", "websocket", "realtime", "webtransport"]
+categories = ["network-programming", "asynchronous"]
+description = "ECS-driven stateful bidirectional server framework for Rust"
+
+[dependencies]
+ecson_core = { path = "../crates/ecson_core" }
+ecson_ecs = { path = "../crates/ecson_ecs" }
+ecson_network = { path = "../crates/ecson_network" }
+bevy_ecs = "0.18.1"
+
+[dev-dependencies]
+tracing = "0.1.44"
+tracing-subscriber = "0.3.23"

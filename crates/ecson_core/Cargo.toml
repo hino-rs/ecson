@@ -1,0 +1,8 @@
+[package]
+name = "ecson_core"
+version = "0.0.5"
+edition = "2024"
+
+[dependencies]
+bevy_ecs = "0.18.1"
+tracing = "0.1.44"
