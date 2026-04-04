@@ -1,9 +1,9 @@
-use bevy_ecs::prelude::*;
-use crate::prelude::*;
 use super::{
-    InLobby, LobbyCommand, LobbyConfig, LobbyInfo, LobbyMap,
-    LobbyReadyEvent, PlayerJoinedLobbyEvent, PlayerLeftLobbyEvent,
+    InLobby, LobbyCommand, LobbyConfig, LobbyInfo, LobbyMap, LobbyReadyEvent,
+    PlayerJoinedLobbyEvent, PlayerLeftLobbyEvent,
 };
+use crate::prelude::*;
+use bevy_ecs::prelude::*;
 
 // ============================================================================
 // パースシステム
@@ -27,8 +27,12 @@ pub fn parse_lobby_messages_system(
     config: Res<LobbyConfig>,
 ) {
     for msg in ev_received.read() {
-        let NetworkPayload::Text(text) = &msg.payload else { continue };
-        let Some(rest) = text.trim().strip_prefix("/lobby ") else { continue };
+        let NetworkPayload::Text(text) = &msg.payload else {
+            continue;
+        };
+        let Some(rest) = text.trim().strip_prefix("/lobby ") else {
+            continue;
+        };
         let parts: Vec<&str> = rest.split_whitespace().collect();
 
         let command = match parts.as_slice() {
@@ -50,7 +54,7 @@ pub fn parse_lobby_messages_system(
                 lobby_name: (*name).to_string(),
             },
             ["leave"] => LobbyCommand::Leave { entity: msg.entity },
-            ["list"]  => LobbyCommand::List  { entity: msg.entity },
+            ["list"] => LobbyCommand::List { entity: msg.entity },
             ["info", name] => LobbyCommand::Info {
                 entity: msg.entity,
                 lobby_name: (*name).to_string(),
@@ -80,10 +84,18 @@ pub fn handle_lobby_create_system(
     client_query: Query<(&ClientId, Option<&InLobby>)>,
 ) {
     for command in ev_command.read() {
-        let LobbyCommand::Create { entity, name, max_members, is_public } = command else {
+        let LobbyCommand::Create {
+            entity,
+            name,
+            max_members,
+            is_public,
+        } = command
+        else {
             continue;
         };
-        let Ok((client_id, current_lobby)) = client_query.get(*entity) else { continue };
+        let Ok((client_id, current_lobby)) = client_query.get(*entity) else {
+            continue;
+        };
 
         // すでにロビーに参加中
         if current_lobby.is_some() {
@@ -142,8 +154,12 @@ pub fn handle_lobby_join_system(
     client_query: Query<(&ClientId, Option<&InLobby>)>,
 ) {
     for command in ev_command.read() {
-        let LobbyCommand::Join { entity, lobby_name } = command else { continue };
-        let Ok((client_id, current_lobby)) = client_query.get(*entity) else { continue };
+        let LobbyCommand::Join { entity, lobby_name } = command else {
+            continue;
+        };
+        let Ok((client_id, current_lobby)) = client_query.get(*entity) else {
+            continue;
+        };
 
         // すでに別のロビーに参加中
         if current_lobby.is_some() {
@@ -174,7 +190,7 @@ pub fn handle_lobby_join_system(
 
         lobby.members.push(client_id.0);
         let count = lobby.members.len() as u32;
-        let max   = lobby.max_members;
+        let max = lobby.max_members;
         let members_snapshot = lobby.members.clone();
 
         commands.entity(*entity).insert(InLobby(lobby_name.clone()));
@@ -217,8 +233,12 @@ pub fn handle_lobby_leave_system(
     client_query: Query<(&ClientId, Option<&InLobby>)>,
 ) {
     for command in ev_command.read() {
-        let LobbyCommand::Leave { entity } = command else { continue };
-        let Ok((client_id, current_lobby)) = client_query.get(*entity) else { continue };
+        let LobbyCommand::Leave { entity } = command else {
+            continue;
+        };
+        let Ok((client_id, current_lobby)) = client_query.get(*entity) else {
+            continue;
+        };
 
         let Some(InLobby(lobby_name)) = current_lobby else {
             ev_send.write(SendMessage {
@@ -254,7 +274,9 @@ pub fn handle_lobby_list_system(
     mut ev_send: MessageWriter<SendMessage>,
 ) {
     for command in ev_command.read() {
-        let LobbyCommand::List { entity } = command else { continue };
+        let LobbyCommand::List { entity } = command else {
+            continue;
+        };
 
         let public: Vec<_> = lobby_map.lobbies.values().filter(|l| l.is_public).collect();
         let mut text = String::from("[Lobby] Public lobbies:\n");
@@ -319,7 +341,9 @@ pub fn handle_lobby_disconnect_system(
 
 /// メンバー除去・オーナー移譲・空ロビー解散をまとめた共通処理
 fn leave_lobby(lobby_map: &mut LobbyMap, lobby_name: &str, client_id: u64) {
-    let Some(lobby) = lobby_map.lobbies.get_mut(lobby_name) else { return };
+    let Some(lobby) = lobby_map.lobbies.get_mut(lobby_name) else {
+        return;
+    };
 
     lobby.members.retain(|&id| id != client_id);
 

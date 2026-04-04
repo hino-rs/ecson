@@ -195,3 +195,33 @@ impl EcsonApp {
         self
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn new_app_has_default_config() {
+        let app = EcsonApp::new();
+        let config = app.world.get_resource::<ServerTimeConfig>().unwrap();
+        assert_eq!(config.tick_rate, 60.0); // デフォルト値
+    }
+
+    #[test]
+    fn add_systems_creates_schedule_if_missing() {
+        let mut app = EcsonApp::new();
+        #[derive(ScheduleLabel, Clone, Debug, PartialEq, Eq, Hash)]
+        struct MySchedule;
+        app.add_systems(MySchedule, || {});
+        assert!(app.schedules.contains(MySchedule));
+    }
+
+    #[test]
+    fn insert_resource_is_accessible() {
+        #[derive(Resource)]
+        struct Marker(u32);
+        let mut app = EcsonApp::new();
+        app.insert_resource(Marker(42));
+        assert_eq!(app.world.get_resource::<Marker>().unwrap().0, 42);
+    }
+}

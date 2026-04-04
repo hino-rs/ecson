@@ -1,9 +1,9 @@
 //! アプリケーション全体で共有されるECSリソースを定義します。
 
+use crate::channels::NetworkEvent;
 use bevy_ecs::prelude::*;
 use std::collections::{HashMap, HashSet};
 use tokio::sync::mpsc;
-use crate::channels::NetworkEvent;
 
 /// ネットワーク接続ID（`u64`）から対応する `Entity` をO(1)で検索するための内部リソース。
 #[derive(Resource, Default)]

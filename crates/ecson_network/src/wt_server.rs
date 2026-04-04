@@ -18,7 +18,9 @@ pub async fn run(
 
     println!(
         "Certificate Hash: {:?}",
-        identity.certificate_chain().as_slice()[0].hash().fmt(wtransport::tls::Sha256DigestFmt::BytesArray)
+        identity.certificate_chain().as_slice()[0]
+            .hash()
+            .fmt(wtransport::tls::Sha256DigestFmt::BytesArray)
     );
 
     let config = ServerConfig::builder()
@@ -36,15 +38,19 @@ pub async fn run(
 
         tokio::spawn(async move {
             match incoming_session.await {
-                Ok(session_request) => {
-                    match session_request.accept().await {
-                        Ok(connection) => {
-                            info!("New WebTransport connection established (ID: {conn_id})");
-                            wt_connection::handle_connection(connection, conn_id, ecs_tx_clone, client_buffer).await;
-                        }
-                        Err(e) => error!("WebTransport session accept error for ID {conn_id}: {e}"),
+                Ok(session_request) => match session_request.accept().await {
+                    Ok(connection) => {
+                        info!("New WebTransport connection established (ID: {conn_id})");
+                        wt_connection::handle_connection(
+                            connection,
+                            conn_id,
+                            ecs_tx_clone,
+                            client_buffer,
+                        )
+                        .await;
                     }
-                }
+                    Err(e) => error!("WebTransport session accept error for ID {conn_id}: {e}"),
+                },
                 Err(e) => error!("Incoming WebTransport connection error: {e}"),
             }
         });

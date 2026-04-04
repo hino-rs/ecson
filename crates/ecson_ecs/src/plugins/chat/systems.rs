@@ -1,7 +1,6 @@
-use crate::prelude::*;
-use crate::plugins::chat::UserJoinedRoomEvent;
 use crate::plugins::chat::ChatCommand;
-
+use crate::plugins::chat::UserJoinedRoomEvent;
+use crate::prelude::*;
 
 /// 受信したテキストメッセージを解析し、適切な ChatCommand イベントを発行するシステム
 pub fn parse_chat_messages_system(
@@ -9,20 +8,34 @@ pub fn parse_chat_messages_system(
     mut ev_command: MessageWriter<ChatCommand>,
 ) {
     for msg in ev_received.read() {
-        let NetworkPayload::Text(text) = &msg.payload else { continue };
+        let NetworkPayload::Text(text) = &msg.payload else {
+            continue;
+        };
         let text = text.trim();
 
         let command = if let Some(room_name) = text.strip_prefix("/join ") {
-            ChatCommand::JoinRoom { entity: msg.entity, room_name: room_name.trim().to_string() }
+            ChatCommand::JoinRoom {
+                entity: msg.entity,
+                room_name: room_name.trim().to_string(),
+            }
         } else if let Some(name) = text.strip_prefix("/nick ") {
-            ChatCommand::Nick { entity: msg.entity, name: name.trim().to_string() }
+            ChatCommand::Nick {
+                entity: msg.entity,
+                name: name.trim().to_string(),
+            }
         } else if text == "/list" {
             ChatCommand::ListRooms { entity: msg.entity }
         } else if text.starts_with('/') {
             let unknown_cmd = text.split_whitespace().next().unwrap_or(text);
-            ChatCommand::Error { entity: msg.entity, message: format!("Unknown command: {unknown_cmd}") }
+            ChatCommand::Error {
+                entity: msg.entity,
+                message: format!("Unknown command: {unknown_cmd}"),
+            }
         } else {
-            ChatCommand::Broadcast { entity: msg.entity, text: text.to_string() }
+            ChatCommand::Broadcast {
+                entity: msg.entity,
+                text: text.to_string(),
+            }
         };
 
         ev_command.write(command);
@@ -38,17 +51,26 @@ pub fn handle_join_room_system(
     mut room_map: ResMut<RoomMap>,
 ) {
     for command in ev_command.read() {
-        let ChatCommand::JoinRoom { entity, room_name } = command else { continue };
-        let Ok((client_id, current_room_opt)) = client_query.get(*entity) else { continue };
+        let ChatCommand::JoinRoom { entity, room_name } = command else {
+            continue;
+        };
+        let Ok((client_id, current_room_opt)) = client_query.get(*entity) else {
+            continue;
+        };
 
         // 古いルームからの離脱処理
         if let Some(old_room) = current_room_opt
-            && let Some(members) = room_map.0.get_mut(&old_room.0) {
-                members.remove(entity);
+            && let Some(members) = room_map.0.get_mut(&old_room.0)
+        {
+            members.remove(entity);
         }
 
         // 新しいルームへの参加処理
-        room_map.0.entry(room_name.clone()).or_default().insert(*entity);
+        room_map
+            .0
+            .entry(room_name.clone())
+            .or_default()
+            .insert(*entity);
         commands.entity(*entity).insert(Room(room_name.clone()));
 
         ev_send.write(SendMessage {
@@ -69,8 +91,10 @@ pub fn handle_list_rooms_system(
     room_map: Res<RoomMap>,
 ) {
     for command in ev_command.read() {
-        let ChatCommand::ListRooms { entity } = command else { continue };
-        
+        let ChatCommand::ListRooms { entity } = command else {
+            continue;
+        };
+
         let mut list_text = String::from("[System] Active Rooms:\n");
         let mut has_active_rooms = false;
 
@@ -95,7 +119,9 @@ pub fn handle_error_system(
     mut ev_send: MessageWriter<SendMessage>,
 ) {
     for command in ev_command.read() {
-        let ChatCommand::Error { entity, message } = command else { continue };
+        let ChatCommand::Error { entity, message } = command else {
+            continue;
+        };
         ev_send.write(SendMessage {
             target: *entity,
             payload: NetworkPayload::Text(format!("[Error] {message}")),
@@ -109,9 +135,11 @@ pub fn handle_nick_system(
     mut ev_send: MessageWriter<SendMessage>,
 ) {
     for command in ev_command.read() {
-        let ChatCommand::Nick { entity, name } = command else { continue };
+        let ChatCommand::Nick { entity, name } = command else {
+            continue;
+        };
         commands.entity(*entity).insert(Username(name.clone()));
-        
+
         ev_send.write(SendMessage {
             target: *entity,
             payload: NetworkPayload::Text(format!("[System] Your nickname is now: {name}")),
@@ -128,11 +156,15 @@ pub fn handle_broadcast_system(
     client_query: Query<(Entity, &ClientId, Option<&Username>, Option<&Room>)>,
     // 送信先一覧を取得するためのクエリ（全員）
     all_clients_query: Query<Entity, With<ClientId>>,
-    room_map_opt: Option<Res<RoomMap>>, 
+    room_map_opt: Option<Res<RoomMap>>,
 ) {
     for command in ev_command.read() {
-        let ChatCommand::Broadcast { entity, text } = command else { continue };
-        let Ok((_, client_id, username, current_room)) = client_query.get(*entity) else { continue };
+        let ChatCommand::Broadcast { entity, text } = command else {
+            continue;
+        };
+        let Ok((_, client_id, username, current_room)) = client_query.get(*entity) else {
+            continue;
+        };
 
         let display_name = username
             .map(|u| u.0.clone())
@@ -149,7 +181,7 @@ pub fn handle_broadcast_system(
                     });
                 }
             }
-        } 
+        }
         // ルームプラグインが無効、またはユーザーがルームに入っていない場合（全体チャット）
         else {
             for target_entity in all_clients_query.iter() {
@@ -162,7 +194,6 @@ pub fn handle_broadcast_system(
     }
 }
 
-
 pub fn handle_disconnections_system(
     mut ev_disconnected: MessageReader<UserDisconnected>,
     mut ev_send: MessageWriter<SendMessage>,
@@ -170,13 +201,19 @@ pub fn handle_disconnections_system(
     room_map_opt: Option<ResMut<RoomMap>>,
 ) {
     // RoomMapが存在しない場合(ルームプラグイン未使用)は何もしない
-    let Some(mut room_map) = room_map_opt else { return };
+    let Some(mut room_map) = room_map_opt else {
+        return;
+    };
 
     for disconnect in ev_disconnected.read() {
         // 切断したユーザーがルームに所属していた場合のみ処理
-        let Ok(room) = client_query.get(disconnect.entity) else { continue };
-        let Some(members) = room_map.0.get(&room.0) else { continue };
-    
+        let Ok(room) = client_query.get(disconnect.entity) else {
+            continue;
+        };
+        let Some(members) = room_map.0.get(&room.0) else {
+            continue;
+        };
+
         // --- 通知 ---
         let msg = format!("[System] User {} has left.", disconnect.client_id);
         let targets: Vec<Entity> = members

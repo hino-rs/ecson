@@ -1,5 +1,5 @@
-use bevy_ecs::prelude::*;
 use crate::prelude::*;
+use bevy_ecs::prelude::*;
 mod systems;
 use crate::plugins::chat::systems::*;
 
@@ -47,14 +47,13 @@ pub struct ChatMessageBroadcastedEvent {
 
 pub struct ChatFullPlugin;
 
-
 impl Plugin for ChatFullPlugin {
     fn build(self, app: &mut EcsonApp) {
         // リソースの初期化
         if !app.world.contains_resource::<RoomMap>() {
             app.world.insert_resource(RoomMap::default());
         }
-        
+
         // 内部イベントとフックイベントの登録
         app.add_event::<ChatCommand>();
         app.add_event::<UserJoinedRoomEvent>(); // ユーザー向けフック
@@ -118,7 +117,7 @@ impl Plugin for ChatRoomPlugin {
             (
                 handle_join_room_system,
                 handle_list_rooms_system,
-                handle_disconnections_system, 
+                handle_disconnections_system,
             ),
         );
     }

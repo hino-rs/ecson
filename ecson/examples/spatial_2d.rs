@@ -1,3 +1,4 @@
+use ecson::plugins::spatial::Spatial2DPlugin;
 /// 2D トップダウンゲームのサンプル
 ///
 /// クライアントが "/move x y" を送ると、
@@ -5,7 +6,6 @@
 ///
 /// クライアント受信フォーマット: "pos {client_id} {x} {y}"
 use ecson::prelude::*;
-use ecson::plugins::spatial::Spatial2DPlugin;
 
 // 接続直後のクライアントに自分の ID を通知する
 fn send_hello_system(
@@ -24,7 +24,7 @@ fn main() {
     EcsonApp::new()
         .add_plugins((
             EcsonWebSocketPlugin::new("127.0.0.1:8080"),
-            EcsonWebTransportDevPlugin::new("127.0.0.1:4433")
+            EcsonWebTransportDevPlugin::new("127.0.0.1:4433"),
         ))
         .add_plugins(
             Spatial2DPlugin::new()

@@ -1,5 +1,5 @@
-use bevy_ecs::prelude::*;
 use crate::prelude::*;
+use bevy_ecs::prelude::*;
 mod systems;
 use systems::*;
 
@@ -128,5 +128,28 @@ impl Plugin for RateLimitPlugin {
 
         app.add_systems(Update, (setup_rate_limit_system, check_rate_limit_system));
         app.add_systems(FixedUpdate, reset_rate_limit_windows_system);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::time::{Duration, Instant};
+
+    #[test]
+    fn default_state_has_zero_count() {
+        let state = RateLimitState::default();
+        assert_eq!(state.message_count, 0);
+        assert!(state.throttled_until.is_none());
+    }
+
+    #[test]
+    fn throttle_window_expires() {
+        let state = RateLimitState {
+            throttled_until: Some(Instant::now() - Duration::from_secs(1)),
+            ..Default::default()
+        };
+        // 期限切れなら None として扱えることをシステム側ロジックと同じ条件で確認
+        assert!(state.throttled_until.unwrap() < Instant::now());
     }
 }

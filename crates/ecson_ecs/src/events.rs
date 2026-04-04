@@ -1,8 +1,8 @@
 //! クライアントとの通信や、システム間でやり取りされるイベント（メッセージ）を定義します。
 
-use bevy_ecs::{entity::Entity, event::Event};
-use bevy_ecs::message::Message;
 use crate::channels::NetworkPayload;
+use bevy_ecs::message::Message;
+use bevy_ecs::{entity::Entity, event::Event};
 
 /// クライアントからメッセージを受信した際に発行されるイベント。
 #[derive(Event, Message)]

@@ -1,6 +1,6 @@
-use ecson::prelude::*;
 use ecson::plugins::chat::ChatFullPlugin;
 use ecson::plugins::heartbeat::HeartbeatPlugin;
+use ecson::prelude::*;
 
 fn main() {
     EcsonApp::new()

@@ -1,8 +1,8 @@
 //! クライアント（接続ユーザー）の属性や状態を表すECSコンポーネント群を定義します。
 
+use crate::channels::NetworkPayload;
 use bevy_ecs::prelude::*;
 use tokio::sync::mpsc;
-use crate::channels::NetworkPayload;
 
 /// ネットワーク層へデータを送信するためのチャンネルを保持するコンポーネント。
 #[derive(Component)]

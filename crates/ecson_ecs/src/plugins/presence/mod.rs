@@ -1,6 +1,6 @@
+use crate::prelude::*;
 use bevy_ecs::prelude::*;
 use std::{collections::HashMap, fmt};
-use crate::prelude::*;
 mod systems;
 use systems::*;
 
@@ -32,8 +32,8 @@ impl fmt::Display for PresenceStatus {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             PresenceStatus::Online => write!(f, "online"),
-            PresenceStatus::Away   => write!(f, "away"),
-            PresenceStatus::Busy   => write!(f, "busy"),
+            PresenceStatus::Away => write!(f, "away"),
+            PresenceStatus::Busy => write!(f, "busy"),
         }
     }
 }

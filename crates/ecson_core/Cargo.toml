@@ -1,7 +1,12 @@
 [package]
 name = "ecson_core"
-version = "0.0.5"
+version = "0.1.0"
 edition = "2024"
+license = "MIT"
+repository = "https://github.com/hino-rs/ecson"
+description = "Core types and application runner for the Ecson server framework"
+keywords = ["gameserver", "ecs", "realtime"]
+categories = ["network-programming", "asynchronous"]
 
 [dependencies]
 bevy_ecs = "0.18.1"

@@ -1,5 +1,5 @@
-use bevy_ecs::prelude::*;
 use crate::prelude::*;
+use bevy_ecs::prelude::*;
 mod systems;
 use systems::*;
 
@@ -43,8 +43,7 @@ impl Default for SnapshotState {
             last_snapshot: Vec::new(),
             pending: Vec::new(),
             // 起動直後に最初のスナップショットが即送信されるよう過去時刻で初期化
-            last_sent: std::time::Instant::now()
-                - std::time::Duration::from_secs(3600),
+            last_sent: std::time::Instant::now() - std::time::Duration::from_secs(3600),
         }
     }
 }
@@ -121,10 +120,7 @@ impl Plugin for SnapshotPlugin {
 
         app.add_systems(
             FixedUpdate,
-            (
-                collect_snapshot_system,
-                broadcast_snapshot_system,
-            ),
+            (collect_snapshot_system, broadcast_snapshot_system),
         );
     }
 }

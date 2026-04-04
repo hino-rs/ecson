@@ -20,7 +20,12 @@ pub async fn run(
     while let Ok((stream, addr)) = listener.accept().await {
         let conn_id = NEXT_CONNECTION_ID.fetch_add(1, Ordering::Relaxed);
         info!("New connection from: {addr} (ID: {conn_id})");
-        tokio::spawn(ws_connection::handle_connection(stream, conn_id, ecs_tx.clone(), client_buffer));
+        tokio::spawn(ws_connection::handle_connection(
+            stream,
+            conn_id,
+            ecs_tx.clone(),
+            client_buffer,
+        ));
     }
 
     Ok(())

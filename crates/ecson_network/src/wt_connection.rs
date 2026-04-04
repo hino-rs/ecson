@@ -3,8 +3,8 @@
 use ecson_ecs::channels::{NetworkEvent, NetworkPayload};
 use tokio::sync::mpsc;
 use tokio_util::sync::CancellationToken;
-use wtransport::Connection;
 use tracing::info;
+use wtransport::Connection;
 
 pub async fn handle_connection(
     connection: Connection,
@@ -15,10 +15,14 @@ pub async fn handle_connection(
     let (client_tx, mut client_rx) = mpsc::channel::<NetworkPayload>(client_buffer);
     let cancel = CancellationToken::new();
 
-    if ecs_tx.send(NetworkEvent::Connected {
-        id: conn_id,
-        sender: client_tx,
-    }).await.is_err() {
+    if ecs_tx
+        .send(NetworkEvent::Connected {
+            id: conn_id,
+            sender: client_tx,
+        })
+        .await
+        .is_err()
+    {
         return;
     }
 
@@ -60,7 +64,10 @@ pub async fn handle_connection(
             };
 
             if ecs_tx_clone
-                .send(NetworkEvent::Message { id: conn_id, payload })
+                .send(NetworkEvent::Message {
+                    id: conn_id,
+                    payload,
+                })
                 .await
                 .is_err()
             {
@@ -69,7 +76,9 @@ pub async fn handle_connection(
         }
 
         cancel.cancel();
-        let _ = ecs_tx_clone.send(NetworkEvent::Disconnected { id: conn_id }).await;
+        let _ = ecs_tx_clone
+            .send(NetworkEvent::Disconnected { id: conn_id })
+            .await;
     });
 
     let _ = tokio::join!(send_task, recv_task);

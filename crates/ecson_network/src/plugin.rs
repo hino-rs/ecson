@@ -185,7 +185,8 @@ impl Plugin for EcsonWebSocketTlsPlugin {
         std::thread::spawn(move || {
             let rt = tokio::runtime::Runtime::new().unwrap();
             rt.block_on(async {
-                if let Err(e) = crate::wss_server::run(&addr, acceptor, ecs_tx, client_buffer).await {
+                if let Err(e) = crate::wss_server::run(&addr, acceptor, ecs_tx, client_buffer).await
+                {
                     error!("Ecson WSS Server Error: {e}");
                 }
             });
@@ -231,15 +232,17 @@ impl Plugin for EcsonWebSocketTlsDevPlugin {
         let addr = self.address.clone();
         let client_buffer = self.client_buffer;
 
-        let acceptor = crate::tls::build_self_signed_acceptor(
-            vec!["localhost".to_string(), "127.0.0.1".to_string()],
-        )
+        let acceptor = crate::tls::build_self_signed_acceptor(vec![
+            "localhost".to_string(),
+            "127.0.0.1".to_string(),
+        ])
         .expect("自己署名証明書の生成に失敗しました");
 
         std::thread::spawn(move || {
             let rt = tokio::runtime::Runtime::new().unwrap();
             rt.block_on(async {
-                if let Err(e) = crate::wss_server::run(&addr, acceptor, ecs_tx, client_buffer).await {
+                if let Err(e) = crate::wss_server::run(&addr, acceptor, ecs_tx, client_buffer).await
+                {
                     error!("Ecson WSS Dev Server Error: {e}");
                 }
             });

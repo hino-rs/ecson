@@ -50,9 +50,6 @@ ecson/
     └── examples/            ← echo.rs, broadcast_chat.rs など
 ```
 
-`ecson` クレートはユーザーが依存する唯一のクレートです。
-内部クレート（`ecson_core` など）は直接公開APIとして使われることを想定していません。
-
 ---
 
 ## クレートの役割と依存関係

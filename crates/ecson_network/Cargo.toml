@@ -1,11 +1,16 @@
 [package]
 name = "ecson_network"
-version = "0.0.5"
+version = "0.1.0"
 edition = "2024"
+license = "MIT"
+repository = "https://github.com/hino-rs/ecson"
+description = "WebSocket and WebTransport server implementations for the Ecson server framework"
+keywords = ["gameserver", "websocket", "webtransport", "realtime"]
+categories = ["network-programming", "asynchronous"]
 
 [dependencies]
-ecson_core = { path = "../ecson_core" }
-ecson_ecs = { path = "../ecson_ecs" }
+ecson_core = { path = "../ecson_core", version = "0.1.0" }
+ecson_ecs = { path = "../ecson_ecs", version = "0.1.0" }
 bevy_ecs = "0.18.1"
 futures-util = "0.3.32"
 rcgen = "0.14.7"

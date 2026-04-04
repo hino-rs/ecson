@@ -1,4 +1,10 @@
 [package]
 name = "ecson_macros"
-version = "0.0.5"
+version = "0.1.0"
 edition = "2024"
+publish = false
+license = "MIT"
+repository = "https://github.com/hino-rs/ecson"
+description = "Derive macros for the Ecson server framework (reserved for future use)"
+keywords = ["gameserver", "ecs", "realtime", "macros"]
+categories = ["network-programming", "asynchronous"]

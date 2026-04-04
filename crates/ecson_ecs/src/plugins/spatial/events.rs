@@ -1,5 +1,5 @@
-use bevy_ecs::prelude::*;
 use bevy_ecs::message::Message;
+use bevy_ecs::prelude::*;
 
 // ============================================================================
 // 移動ペイロード
@@ -42,7 +42,7 @@ pub struct ClientZoneChangedEvent {
 // パースユーティリティ
 // ============================================================================
 
-/// "/move x y [z]" 形式のテキストを MovePayload にパースする
+/// "/move x y \[z\]" 形式のテキストを MovePayload にパースする
 ///
 /// - "/move 1.0 2.0"       → Move2D
 /// - "/move 1.0 2.0 3.0"   → Move3D
@@ -62,7 +62,7 @@ pub fn parse_move_command(text: &str) -> Option<MovePayload> {
             let z: f32 = z_str.parse().ok()?;
             Some(MovePayload::Move3D { x, y, z })
         }
-        None => Some(MovePayload::Move2D { x, y })
+        None => Some(MovePayload::Move2D { x, y }),
     }
 }
 

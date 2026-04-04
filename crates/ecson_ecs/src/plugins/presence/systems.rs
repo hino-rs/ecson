@@ -1,6 +1,6 @@
-use bevy_ecs::prelude::*;
+use super::{PresenceChangedEvent, PresenceMap, PresenceStatus};
 use crate::prelude::*;
-use super::{PresenceMap, PresenceStatus, PresenceChangedEvent};
+use bevy_ecs::prelude::*;
 
 /// 受信メッセージから在席ステータス変更コマンドを解析するシステム
 pub fn parse_presence_messages_system(
@@ -11,14 +11,14 @@ pub fn parse_presence_messages_system(
         if let NetworkPayload::Text(text) = &msg.payload {
             let status = match text.trim() {
                 "/status online" => PresenceStatus::Online,
-                "/status away"   => PresenceStatus::Away,
-                "/status busy"   => PresenceStatus::Busy,
-                _                => continue,
+                "/status away" => PresenceStatus::Away,
+                "/status busy" => PresenceStatus::Busy,
+                _ => continue,
             };
             ev_presence.write(PresenceChangedEvent {
                 client_id: msg.client_id,
                 entity: msg.entity,
-                status
+                status,
             });
         }
     }
@@ -44,7 +44,6 @@ pub fn handle_presence_update_system(
             });
         }
     }
-
 }
 
 /// クライアント切断時に PresenceMap からエントリを削除するシステム

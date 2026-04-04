@@ -1,10 +1,10 @@
-use bevy_ecs::prelude::*;
-use crate::prelude::*;
 use crate::plugins::spatial::{
+    SpatialConfig,
     components::{Position2D, Position3D, SpatialZone2D, SpatialZone3D},
     events::{ClientMovedEvent, ClientZoneChangedEvent, MovePayload},
-    SpatialConfig,
 };
+use crate::prelude::*;
+use bevy_ecs::prelude::*;
 
 // ============================================================================
 // セットアップシステム
@@ -18,10 +18,9 @@ pub fn setup_spatial_2d_system(
     query: Query<Entity, (With<ClientId>, Without<Position2D>)>,
 ) {
     for entity in query.iter() {
-        commands.entity(entity).insert((
-            Position2D::default(),
-            SpatialZone2D::default(),
-        ));
+        commands
+            .entity(entity)
+            .insert((Position2D::default(), SpatialZone2D::default()));
     }
 }
 
@@ -31,10 +30,9 @@ pub fn setup_spatial_3d_flat_system(
     query: Query<Entity, (With<ClientId>, Without<Position3D>)>,
 ) {
     for entity in query.iter() {
-        commands.entity(entity).insert((
-            Position3D::default(),
-            SpatialZone2D::default(),
-        ));
+        commands
+            .entity(entity)
+            .insert((Position3D::default(), SpatialZone2D::default()));
     }
 }
 
@@ -44,10 +42,9 @@ pub fn setup_spatial_3d_system(
     query: Query<Entity, (With<ClientId>, Without<Position3D>)>,
 ) {
     for entity in query.iter() {
-        commands.entity(entity).insert((
-            Position3D::default(),
-            SpatialZone3D::default(),
-        ));
+        commands
+            .entity(entity)
+            .insert((Position3D::default(), SpatialZone3D::default()));
     }
 }
 
@@ -68,8 +65,12 @@ pub fn handle_move_2d_system(
     mut query: Query<(&mut Position2D, &mut SpatialZone2D)>,
 ) {
     for ev in ev_moved.read() {
-        let MovePayload::Move2D { x, y } = ev.payload else { continue };
-        let Ok((mut pos, mut zone)) = query.get_mut(ev.entity) else { continue };
+        let MovePayload::Move2D { x, y } = ev.payload else {
+            continue;
+        };
+        let Ok((mut pos, mut zone)) = query.get_mut(ev.entity) else {
+            continue;
+        };
 
         pos.x = x;
         pos.y = y;
@@ -103,8 +104,12 @@ pub fn handle_move_3d_flat_system(
     mut query: Query<(&mut Position3D, &mut SpatialZone2D)>,
 ) {
     for ev in ev_moved.read() {
-        let MovePayload::Move3D { x, y, z } = ev.payload else { continue };
-        let Ok((mut pos, mut zone)) = query.get_mut(ev.entity) else { continue };
+        let MovePayload::Move3D { x, y, z } = ev.payload else {
+            continue;
+        };
+        let Ok((mut pos, mut zone)) = query.get_mut(ev.entity) else {
+            continue;
+        };
 
         pos.x = x;
         pos.y = y;
@@ -139,8 +144,12 @@ pub fn handle_move_3d_system(
     mut query: Query<(&mut Position3D, &mut SpatialZone3D)>,
 ) {
     for ev in ev_moved.read() {
-        let MovePayload::Move3D { x, y, z } = ev.payload else { continue };
-        let Ok((mut pos, mut zone)) = query.get_mut(ev.entity) else { continue };
+        let MovePayload::Move3D { x, y, z } = ev.payload else {
+            continue;
+        };
+        let Ok((mut pos, mut zone)) = query.get_mut(ev.entity) else {
+            continue;
+        };
 
         pos.x = x;
         pos.y = y;

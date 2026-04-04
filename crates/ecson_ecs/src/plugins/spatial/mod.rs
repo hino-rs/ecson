@@ -1,5 +1,5 @@
-use bevy_ecs::prelude::*;
 use crate::prelude::*;
+use bevy_ecs::prelude::*;
 
 pub mod components;
 pub mod events;
@@ -44,11 +44,6 @@ impl Default for SpatialConfig {
 /// # 使用コンポーネント
 /// - [`Position2D`]
 /// - [`SpatialZone2D`]
-///
-/// # Example
-/// ```no_run
-/// app.add_plugins(Spatial2DPlugin::new().interest_radius(200.0));
-/// ```
 pub struct Spatial2DPlugin {
     interest_radius: f32,
     zone_size: f32,
@@ -56,12 +51,17 @@ pub struct Spatial2DPlugin {
 
 impl Default for Spatial2DPlugin {
     fn default() -> Self {
-        Self { interest_radius: 100.0, zone_size: 50.0 }
+        Self {
+            interest_radius: 100.0,
+            zone_size: 50.0,
+        }
     }
 }
 
 impl Spatial2DPlugin {
-    pub fn new() -> Self { Self::default() }
+    pub fn new() -> Self {
+        Self::default()
+    }
 
     pub fn interest_radius(mut self, r: f32) -> Self {
         self.interest_radius = r;
@@ -84,10 +84,13 @@ impl Plugin for Spatial2DPlugin {
         app.add_event::<ClientMovedEvent>();
         app.add_event::<ClientZoneChangedEvent>();
 
-        app.add_systems(Update, (
-            systems::setup_spatial_2d_system,
-            systems::parse_move_messages_system,
-        ));
+        app.add_systems(
+            Update,
+            (
+                systems::setup_spatial_2d_system,
+                systems::parse_move_messages_system,
+            ),
+        );
         app.add_systems(
             FixedUpdate,
             (
@@ -122,12 +125,17 @@ pub struct Spatial3DFlatPlugin {
 
 impl Default for Spatial3DFlatPlugin {
     fn default() -> Self {
-        Self { interest_radius: 100.0, zone_size: 50.0 }
+        Self {
+            interest_radius: 100.0,
+            zone_size: 50.0,
+        }
     }
 }
 
 impl Spatial3DFlatPlugin {
-    pub fn new() -> Self { Self::default() }
+    pub fn new() -> Self {
+        Self::default()
+    }
 
     pub fn interest_radius(mut self, r: f32) -> Self {
         self.interest_radius = r;
@@ -150,10 +158,13 @@ impl Plugin for Spatial3DFlatPlugin {
         app.add_event::<ClientMovedEvent>();
         app.add_event::<ClientZoneChangedEvent>();
 
-        app.add_systems(Update, (
-            systems::setup_spatial_3d_flat_system,
-            systems::parse_move_messages_system,
-        ));
+        app.add_systems(
+            Update,
+            (
+                systems::setup_spatial_3d_flat_system,
+                systems::parse_move_messages_system,
+            ),
+        );
         app.add_systems(
             FixedUpdate,
             (
@@ -184,12 +195,17 @@ pub struct Spatial3DPlugin {
 
 impl Default for Spatial3DPlugin {
     fn default() -> Self {
-        Self { interest_radius: 100.0, zone_size: 50.0 }
+        Self {
+            interest_radius: 100.0,
+            zone_size: 50.0,
+        }
     }
 }
 
 impl Spatial3DPlugin {
-    pub fn new() -> Self { Self::default() }
+    pub fn new() -> Self {
+        Self::default()
+    }
 
     pub fn interest_radius(mut self, r: f32) -> Self {
         self.interest_radius = r;
@@ -212,10 +228,13 @@ impl Plugin for Spatial3DPlugin {
         app.add_event::<ClientMovedEvent>();
         app.add_event::<ClientZoneChangedEvent>();
 
-        app.add_systems(Update, (
-            systems::setup_spatial_3d_system,
-            systems::parse_move_messages_system,
-        ));
+        app.add_systems(
+            Update,
+            (
+                systems::setup_spatial_3d_system,
+                systems::parse_move_messages_system,
+            ),
+        );
         app.add_systems(
             FixedUpdate,
             (

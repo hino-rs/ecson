@@ -8,7 +8,7 @@ fn test(mut count: ResMut<Count>) {
     //     println!("{count:?}");
     // }
 
-        println!("{count:?}");
+    println!("{count:?}");
     count.0 += 1;
 }
 

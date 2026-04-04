@@ -1,6 +1,6 @@
-use bevy_ecs::prelude::*;
+use super::{SnapshotConfig, SnapshotSentEvent, SnapshotState, SnapshotSubscriber, Snapshotable};
 use crate::prelude::*;
-use super::{SnapshotConfig, SnapshotSentEvent, SnapshotState, Snapshotable, SnapshotSubscriber};
+use bevy_ecs::prelude::*;
 
 /// Snapshotable エンティティの現在状態を収集してシリアライズするシステム
 ///
@@ -28,9 +28,7 @@ pub fn collect_snapshot_system(
     // 例: [{"id":1,"name":"player_a"},{"id":2,"name":"player_b"}]
     let entries: Vec<String> = query
         .iter()
-        .map(|(entity, name)| {
-            format!(r#"{{"id":{},"name":"{}"}}"#, entity.index(), name.as_str())
-        })
+        .map(|(entity, name)| format!(r#"{{"id":{},"name":"{}"}}"#, entity.index(), name.as_str()))
         .collect();
     let bytes = format!("[{}]", entries.join(",")).into_bytes();
 

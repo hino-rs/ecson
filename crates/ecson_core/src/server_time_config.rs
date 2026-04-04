@@ -16,7 +16,7 @@ pub struct ServerTimeConfig {
 impl Default for ServerTimeConfig {
     fn default() -> Self {
         Self {
-            update_sleep: 1.0,
+            update_sleep: 0.01,
             tick_rate: 60.0,
             max_ticks_per_frame: 5,
             warn_on_lag: false,

@@ -6,9 +6,9 @@ pub use ecson_network;
 pub use ecson_ecs::plugins;
 
 pub mod prelude {
-    pub use bevy_ecs::prelude::*;
     pub use bevy_ecs::event::Event;
     pub use bevy_ecs::message::{MessageReader, MessageWriter, Messages};
+    pub use bevy_ecs::prelude::*;
 
     pub use ecson_core::app::{EcsonApp, FixedUpdate, Startup, Update};
     pub use ecson_core::plugin::Plugin;

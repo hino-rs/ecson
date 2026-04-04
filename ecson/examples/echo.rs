@@ -1,5 +1,4 @@
 use ecson::prelude::*;
-use tracing::{Level, span};
 
 // Define System
 fn echo_system(

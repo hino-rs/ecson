@@ -1,5 +1,5 @@
-use bevy_ecs::prelude::*;
 use crate::prelude::*;
+use bevy_ecs::prelude::*;
 mod systems;
 use systems::*;
 
@@ -115,16 +115,7 @@ impl Plugin for HeartbeatPlugin {
 
         app.add_event::<ClientTimedOutEvent>();
 
-        app.add_systems(Update, (
-            setup_heartbeat_system,
-            receive_pong_system,
-        ));
-        app.add_systems(
-            FixedUpdate,
-            (
-                send_ping_system,
-                check_timeout_system,
-            ),
-        );
+        app.add_systems(Update, (setup_heartbeat_system, receive_pong_system));
+        app.add_systems(FixedUpdate, (send_ping_system, check_timeout_system));
     }
 }

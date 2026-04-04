@@ -1,6 +1,6 @@
-use bevy_ecs::prelude::*;
-use crate::prelude::*;
 use super::{RateLimitAction, RateLimitConfig, RateLimitExceededEvent, RateLimitState};
+use crate::prelude::*;
+use bevy_ecs::prelude::*;
 
 /// 新しく接続したクライアントに RateLimitState を付与するシステム
 ///

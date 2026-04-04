@@ -1,6 +1,6 @@
-use bevy_ecs::prelude::*;
+use super::{ClientTimedOutEvent, HeartbeatConfig, HeartbeatState};
 use crate::prelude::*;
-use super::{HeartbeatConfig, HeartbeatState, ClientTimedOutEvent};
+use bevy_ecs::prelude::*;
 
 /// 定期的にすべてのクライアントへ Ping を送信するシステム
 pub fn send_ping_system(
@@ -27,8 +27,12 @@ pub fn receive_pong_system(
     mut query: Query<&mut HeartbeatState>,
 ) {
     for msg in ev_received.read() {
-        let NetworkPayload::Text(text) = &msg.payload else { continue };
-        if text.trim() != "pong" { continue }
+        let NetworkPayload::Text(text) = &msg.payload else {
+            continue;
+        };
+        if text.trim() != "pong" {
+            continue;
+        }
 
         if let Ok(mut state) = query.get_mut(msg.entity) {
             state.last_pong_at = std::time::Instant::now();
@@ -48,7 +52,10 @@ pub fn check_timeout_system(
     for (entity, state, client_id) in query.iter() {
         if state.last_pong_at.elapsed().as_secs_f32() > config.timeout_secs {
             ev_timeout.write(ClientTimedOutEvent { entity });
-            ev_disconnect.write(UserDisconnected { entity, client_id: client_id.0 });
+            ev_disconnect.write(UserDisconnected {
+                entity,
+                client_id: client_id.0,
+            });
             commands.entity(entity).despawn();
         }
     }

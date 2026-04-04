@@ -1,11 +1,11 @@
-use std::collections::HashMap;
-use bevy_ecs::prelude::*;
-use crate::prelude::*;
 use crate::plugins::spatial::{
+    SpatialConfig,
     components::{Position2D, Position3D, SpatialZone2D, SpatialZone3D},
     math::{within_radius_2d, within_radius_3d, within_radius_3d_flat},
-    SpatialConfig,
 };
+use crate::prelude::*;
+use bevy_ecs::prelude::*;
+use std::collections::HashMap;
 
 // ============================================================================
 // Spatial2DPlugin 用
@@ -27,7 +27,9 @@ pub fn broadcast_nearby_2d_system(
     mut ev_send: MessageWriter<SendMessage>,
 ) {
     let clients: Vec<_> = query.iter().collect();
-    if clients.len() < 2 { return; }
+    if clients.len() < 2 {
+        return;
+    }
 
     // ゾーン → クライアントのインデックス一覧
     let mut zone_map: HashMap<SpatialZone2D, Vec<usize>> = HashMap::new();
@@ -38,15 +40,17 @@ pub fn broadcast_nearby_2d_system(
     let radius = config.interest_radius;
 
     for (a_entity, a_id, a_pos, a_zone) in &clients {
-        let payload = NetworkPayload::Text(
-            format!("pos {} {} {}", a_id.0, a_pos.x, a_pos.y)
-        );
+        let payload = NetworkPayload::Text(format!("pos {} {} {}", a_id.0, a_pos.x, a_pos.y));
 
         for neighbor_zone in a_zone.neighbors() {
-            let Some(indices) = zone_map.get(&neighbor_zone) else { continue };
+            let Some(indices) = zone_map.get(&neighbor_zone) else {
+                continue;
+            };
             for &b_idx in indices {
                 let (b_entity, _, b_pos, _) = &clients[b_idx];
-                if b_entity == a_entity { continue }
+                if b_entity == a_entity {
+                    continue;
+                }
                 if within_radius_2d(a_pos.x, a_pos.y, b_pos.x, b_pos.y, radius) {
                     ev_send.write(SendMessage {
                         target: *b_entity,
@@ -74,7 +78,9 @@ pub fn broadcast_nearby_3d_flat_system(
     mut ev_send: MessageWriter<SendMessage>,
 ) {
     let clients: Vec<_> = query.iter().collect();
-    if clients.len() < 2 { return; }
+    if clients.len() < 2 {
+        return;
+    }
 
     let mut zone_map: HashMap<SpatialZone2D, Vec<usize>> = HashMap::new();
     for (i, (_, _, _, zone)) in clients.iter().enumerate() {
@@ -84,15 +90,20 @@ pub fn broadcast_nearby_3d_flat_system(
     let radius = config.interest_radius;
 
     for (a_entity, a_id, a_pos, a_zone) in &clients {
-        let payload = NetworkPayload::Text(
-            format!("pos {} {} {} {}", a_id.0, a_pos.x, a_pos.y, a_pos.z)
-        );
+        let payload = NetworkPayload::Text(format!(
+            "pos {} {} {} {}",
+            a_id.0, a_pos.x, a_pos.y, a_pos.z
+        ));
 
         for neighbor_zone in a_zone.neighbors() {
-            let Some(indices) = zone_map.get(&neighbor_zone) else { continue };
+            let Some(indices) = zone_map.get(&neighbor_zone) else {
+                continue;
+            };
             for &b_idx in indices {
                 let (b_entity, _, b_pos, _) = &clients[b_idx];
-                if b_entity == a_entity { continue }
+                if b_entity == a_entity {
+                    continue;
+                }
                 // Y軸は無視して XZ のみで判定
                 if within_radius_3d_flat(a_pos.x, a_pos.z, b_pos.x, b_pos.z, radius) {
                     ev_send.write(SendMessage {
@@ -121,7 +132,9 @@ pub fn broadcast_nearby_3d_system(
     mut ev_send: MessageWriter<SendMessage>,
 ) {
     let clients: Vec<_> = query.iter().collect();
-    if clients.len() < 2 { return; }
+    if clients.len() < 2 {
+        return;
+    }
 
     let mut zone_map: HashMap<SpatialZone3D, Vec<usize>> = HashMap::new();
     for (i, (_, _, _, zone)) in clients.iter().enumerate() {
@@ -131,15 +144,20 @@ pub fn broadcast_nearby_3d_system(
     let radius = config.interest_radius;
 
     for (a_entity, a_id, a_pos, a_zone) in &clients {
-        let payload = NetworkPayload::Text(
-            format!("pos {} {} {} {}", a_id.0, a_pos.x, a_pos.y, a_pos.z)
-        );
+        let payload = NetworkPayload::Text(format!(
+            "pos {} {} {} {}",
+            a_id.0, a_pos.x, a_pos.y, a_pos.z
+        ));
 
         for neighbor_zone in a_zone.neighbors() {
-            let Some(indices) = zone_map.get(&neighbor_zone) else { continue };
+            let Some(indices) = zone_map.get(&neighbor_zone) else {
+                continue;
+            };
             for &b_idx in indices {
                 let (b_entity, _, b_pos, _) = &clients[b_idx];
-                if b_entity == a_entity { continue }
+                if b_entity == a_entity {
+                    continue;
+                }
                 if within_radius_3d(a_pos.x, a_pos.y, a_pos.z, b_pos.x, b_pos.y, b_pos.z, radius) {
                     ev_send.write(SendMessage {
                         target: *b_entity,

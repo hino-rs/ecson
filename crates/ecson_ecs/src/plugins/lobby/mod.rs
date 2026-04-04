@@ -1,6 +1,6 @@
+use crate::prelude::*;
 use bevy_ecs::prelude::*;
 use std::collections::HashMap;
-use crate::prelude::*;
 mod systems;
 use systems::*;
 
@@ -29,7 +29,6 @@ pub struct LobbyConfig {
     pub default_max_members: u32,
 }
 
-
 // ============================================================================
 // コンポーネント
 // ============================================================================
@@ -45,7 +44,12 @@ pub struct InLobby(pub String);
 #[derive(Message)]
 pub enum LobbyCommand {
     /// ロビー作成
-    Create { entity: Entity, name: String, max_members: u32, is_public: bool },
+    Create {
+        entity: Entity,
+        name: String,
+        max_members: u32,
+        is_public: bool,
+    },
     /// ロビー参加
     Join { entity: Entity, lobby_name: String },
     /// ロビー退出
@@ -89,7 +93,9 @@ pub struct LobbyPlugin {
 
 impl Default for LobbyPlugin {
     fn default() -> Self {
-        Self { default_max_members: 4 }
+        Self {
+            default_max_members: 4,
+        }
     }
 }
 

@@ -22,13 +22,8 @@ pub enum NetworkEvent {
     },
 
     /// クライアントからメッセージを受信したことを示します。
-    Message {
-        id: u64,
-        payload: NetworkPayload,
-    },
+    Message { id: u64, payload: NetworkPayload },
 
     /// クライアントとの接続が切断されたことを示します。
-    Disconnected {
-        id: u64,
-    },
+    Disconnected { id: u64 },
 }
