@@ -12,6 +12,7 @@ use bevy_ecs::{
     system::ScheduleSystem,
     world::World,
 };
+use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tracing::{info, warn};
 
@@ -32,6 +33,36 @@ pub struct Update;
 pub struct FixedUpdate;
 
 // ============================================================================
+// Tokio ランタイムリソース
+// ============================================================================
+
+/// アプリケーション全体で共有される Tokio ランタイムを保持する ECS リソース。
+///
+/// ネットワークプラグインはプラグインごとに Runtime を生成するのではなく、
+/// このリソースから `Arc` のクローンを取得して `spawn` する。
+/// これにより Tokio のスレッドプールが一元管理され、リソースの重複生成を防ぐ。
+///
+/// # 使用例（プラグイン内）
+/// ```rust, ignore
+/// let rt = app.world.get_resource::<TokioRuntime>().unwrap().clone();
+/// rt.spawn(async move { ... });
+/// ```
+#[derive(Resource, Clone)]
+pub struct TokioRuntime(pub Arc<tokio::runtime::Runtime>);
+
+impl TokioRuntime {
+    /// 内包する `Runtime` 上に非同期タスクをスポーンする。
+    /// `Arc` を複数箇所でクローンして使うための便利メソッド。
+    pub fn spawn<F>(&self, future: F) -> tokio::task::JoinHandle<F::Output>
+    where
+        F: std::future::Future + Send + 'static,
+        F::Output: Send + 'static,
+    {
+        self.0.spawn(future)
+    }
+}
+
+// ============================================================================
 // アプリケーションコア
 // ============================================================================
 /// ECSの `World` と実行 `Schedule` を管理するコアアプリケーション構造体。
@@ -46,10 +77,17 @@ pub struct EcsonApp {
 }
 
 impl Default for EcsonApp {
-    /// 空の `World` と `MainSchedule` を持つデフォルトインスタンスを作成します。
     fn default() -> Self {
         let mut world = World::new();
         world.insert_resource(ServerTimeConfig::default());
+
+        // Tokio ランタイムをここで1つだけ生成し、World に登録する。
+        // 以降、全ネットワークプラグインはこのリソースを共有する。
+        let rt = tokio::runtime::Builder::new_multi_thread()
+            .enable_all()
+            .build()
+            .expect("Tokio runtime の初期化に失敗しました");
+        world.insert_resource(TokioRuntime(Arc::new(rt)));
 
         let mut schedules = Schedules::new();
         schedules.insert(Schedule::new(Startup));
@@ -282,6 +320,16 @@ mod tests {
         let app = EcsonApp::new();
         let config = app.world.get_resource::<ServerTimeConfig>().unwrap();
         assert_eq!(config.tick_rate, 60.0); // デフォルト値
+    }
+
+    #[test]
+    fn tokio_runtime_can_spawn_task() {
+        // Runtime 上でタスクをスポーンし、結果が取得できることを確認する
+        let app = EcsonApp::new();
+        let rt = app.world.get_resource::<TokioRuntime>().unwrap().clone();
+        let handle = rt.spawn(async { 42u32 });
+        let result = rt.0.block_on(handle).unwrap();
+        assert_eq!(result, 42);
     }
 
     #[test]
