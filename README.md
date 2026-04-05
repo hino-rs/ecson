@@ -1,6 +1,6 @@
 # Ecson
 
-[日本語](./README.ja.md)
+[日本語](https://github.com/hino-rs/ecson/blob/main/README.ja.md)
 
 > An ECS-driven, stateful, bidirectional server framework for Rust
 

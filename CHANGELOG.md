@@ -53,9 +53,7 @@ An experimental implementation of an ECS-driven stateful bidirectional server fr
 
 #### Documentation
 
-- [Tutorial](https://hino-rs.github.io/ecson/)
-- [ECS Guide](https://github.com/hino-rs/ecson/tree/main/docs/ECS.md)
-- [CONTRIBUTING.md](./CONTRIBUTING.md)
+[official](https://ecson.netlify.app/)
 
 ---
 
