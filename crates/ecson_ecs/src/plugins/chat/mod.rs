@@ -59,20 +59,22 @@ impl Plugin for ChatFullPlugin {
         app.add_event::<UserJoinedRoomEvent>(); // ユーザー向けフック
         app.add_event::<ChatMessageBroadcastedEvent>(); // ユーザー向けフック
 
-        // ボイラープレートだったシステム群をすべてエンジン側で登録！
-        app.add_systems(Update, parse_chat_messages_system);
+        // parse → handle → despawn を chain で順序保証しつつ全て Update に統一する。
+        // FixedUpdate で読むと Messages のダブルバッファが ~2ms で消えてコマンドが失われるため。
         app.add_systems(
-            FixedUpdate,
+            Update,
             (
+                parse_chat_messages_system,
                 handle_join_room_system,
                 handle_nick_system,
                 handle_list_rooms_system,
                 handle_error_system,
                 handle_broadcast_system,
-                handle_disconnections_system, // エンジン側が提供するRoomクリーンアップなど
-            ),
+                handle_disconnections_system,
+                despawn_disconnected_system,
+            )
+                .chain(),
         );
-        app.add_systems(FixedUpdate, despawn_disconnected_system);
     }
 }
 
@@ -86,16 +88,17 @@ impl Plugin for ChatCorePlugin {
         app.add_event::<ChatCommand>();
         app.add_event::<ChatMessageBroadcastedEvent>();
 
-        app.add_systems(Update, parse_chat_messages_system);
         app.add_systems(
-            FixedUpdate,
+            Update,
             (
+                parse_chat_messages_system,
                 handle_nick_system,
                 handle_error_system,
                 handle_broadcast_system,
-            ),
+                despawn_disconnected_system,
+            )
+                .chain(),
         );
-        app.add_systems(FixedUpdate, despawn_disconnected_system);
     }
 }
 
@@ -113,7 +116,7 @@ impl Plugin for ChatRoomPlugin {
         app.add_event::<UserJoinedRoomEvent>();
 
         app.add_systems(
-            FixedUpdate,
+            Update,
             (
                 handle_join_room_system,
                 handle_list_rooms_system,
