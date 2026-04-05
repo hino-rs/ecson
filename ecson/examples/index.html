@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ecson Examples</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #010e1a; --bg2: #051825; --bg3: #0a2235;
+    --border: #1e3a5f; --text: #d6deeb; --muted: #5f7e97;
+    --blue: #82aaff; --cyan: #50ccb8; --yellow: #efd085;
+    --pink: #fd71b8; --green: #22da6e; --red: #ef5350;
+    --orange: #ffbc42;
+  }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
+
+  header { border-bottom: 1px solid var(--border); padding: 12px 20px; display: flex; align-items: center; gap: 12px; }
+  header h1 { font-size: 1rem; font-weight: 600; color: var(--blue); letter-spacing: .05em; }
+  header span { color: var(--muted); font-size: .8rem; }
+
+  .tabs { display: flex; gap: 2px; padding: 12px 20px 0; border-bottom: 1px solid var(--border); }
+  .tab { padding: 8px 16px; border-radius: 6px 6px 0 0; cursor: pointer; font-size: .85rem; color: var(--muted); border: 1px solid transparent; border-bottom: none; transition: all .15s; }
+  .tab:hover { color: var(--text); }
+  .tab.active { background: var(--bg2); border-color: var(--border); color: var(--blue); }
+  .tab-badge { display: inline-block; background: var(--border); border-radius: 4px; font-size: .7rem; padding: 1px 5px; margin-left: 5px; color: var(--cyan); }
+
+  .panel { display: none; padding: 16px 20px; height: calc(100vh - 110px); }
+  .panel.active { display: flex; flex-direction: column; gap: 10px; }
+
+  /* Protocol toggle */
+  .proto-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .proto-toggle { display: flex; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; flex-shrink: 0; }
+  .proto-btn { padding: 5px 12px; font-size: .78rem; cursor: pointer; background: transparent; color: var(--muted); border: none; transition: all .15s; }
+  .proto-btn.active { background: var(--bg3); color: var(--blue); font-weight: 600; }
+  .proto-btn:hover:not(.active) { color: var(--text); }
+  .proto-badge { font-size: .7rem; padding: 2px 6px; border-radius: 4px; font-weight: 600; }
+  .badge-ws { background: #1e3a5f; color: var(--blue); }
+  .badge-wt { background: #1a2e1a; color: var(--green); }
+
+  .conn-bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .conn-bar input { flex: 1; min-width: 160px; background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; padding: 7px 12px; color: var(--text); font-size: .85rem; outline: none; }
+  .conn-bar input:focus { border-color: var(--blue); }
+
+  /* Cert hash row */
+  .hash-row { display: flex; gap: 8px; align-items: center; }
+  .hash-row label { font-size: .75rem; color: var(--muted); white-space: nowrap; flex-shrink: 0; }
+  .hash-row input { flex: 1; background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; color: var(--orange); font-size: .75rem; font-family: monospace; outline: none; }
+  .hash-row input:focus { border-color: var(--orange); }
+  .hash-hint { font-size: .72rem; color: var(--muted); }
+
+  .btn { padding: 7px 14px; border-radius: 6px; border: none; cursor: pointer; font-size: .85rem; font-weight: 500; transition: all .15s; }
+  .btn-connect { background: var(--blue); color: var(--bg); }
+  .btn-connect:hover { opacity: .85; }
+  .btn-connect.connected { background: var(--red); color: #fff; }
+  .btn-send { background: var(--cyan); color: var(--bg); }
+  .btn-send:hover { opacity: .85; }
+  .btn-send:disabled { opacity: .4; cursor: not-allowed; }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex-shrink: 0; }
+  .status-dot.on { background: var(--green); box-shadow: 0 0 6px var(--green); }
+  .status-dot.off { background: var(--red); }
+  .status-dot.wt-on { background: var(--orange); box-shadow: 0 0 6px var(--orange); }
+
+  .log { flex: 1; background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; overflow-y: auto; font-family: 'Consolas', monospace; font-size: .8rem; display: flex; flex-direction: column; gap: 3px; }
+  .log-line { padding: 2px 0; border-bottom: 1px solid #0a1f31; line-height: 1.5; }
+  .log-line:last-child { border-bottom: none; }
+  .log-ts { color: var(--muted); margin-right: 8px; user-select: none; }
+  .log-sys { color: var(--muted); font-style: italic; }
+  .log-recv { color: var(--cyan); }
+  .log-recv-wt { color: var(--orange); }
+  .log-sent { color: var(--yellow); }
+  .log-err { color: var(--red); }
+
+  .input-row { display: flex; gap: 8px; }
+  .input-row input { flex: 1; background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; color: var(--text); font-size: .85rem; outline: none; }
+  .input-row input:focus { border-color: var(--blue); }
+
+  /* Room chat */
+  .chat-layout { flex: 1; display: flex; gap: 10px; min-height: 0; }
+  .chat-sidebar { width: 180px; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px; }
+  .chat-main { flex: 1; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+  .sidebar-box { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 10px; font-size: .8rem; }
+  .sidebar-box h3 { color: var(--muted); font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 8px; }
+  .cmd-item { display: block; padding: 4px 6px; border-radius: 4px; cursor: pointer; color: var(--blue); margin-bottom: 2px; font-family: monospace; font-size: .78rem; transition: background .1s; }
+  .cmd-item:hover { background: var(--bg3); }
+  .nick-display { color: var(--green); font-family: monospace; font-size: .85rem; min-height: 1em; }
+
+  /* Spatial */
+  .spatial-layout { flex: 1; display: flex; gap: 10px; min-height: 0; }
+  .spatial-canvas-wrap { flex: 1; position: relative; background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; cursor: crosshair; }
+  canvas { width: 100%; height: 100%; display: block; }
+  .spatial-info { width: 180px; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px; }
+  .info-box { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 10px; font-size: .8rem; }
+  .info-box h3 { color: var(--muted); font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 8px; }
+  .player-item { padding: 3px 0; border-bottom: 1px solid var(--border); font-family: monospace; font-size: .75rem; }
+  .player-item:last-child { border-bottom: none; }
+  .wt-unsupported { background: #1a1500; border: 1px solid #3a2800; border-radius: 6px; padding: 8px 12px; font-size: .78rem; color: var(--orange); display: none; }
+
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🚀 Ecson</h1>
+  <span>Examples Frontend</span>
+</header>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('echo')">Echo</div>
+  <div class="tab" onclick="switchTab('broadcast')">Broadcast Chat</div>
+  <div class="tab" onclick="switchTab('room')">Room Chat</div>
+  <div class="tab" onclick="switchTab('spatial')">Spatial 2D</div>
+</div>
+
+<!-- ===== ECHO ===== -->
+<div id="panel-echo" class="panel active">
+  <div class="proto-row">
+    <div class="proto-toggle">
+      <button class="proto-btn active" id="echo-proto-ws" onclick="setEchoProto('ws')">WebSocket</button>
+      <button class="proto-btn" id="echo-proto-wt" onclick="setEchoProto('wt')">WebTransport</button>
+    </div>
+    <span class="proto-badge badge-ws" id="echo-badge">WS :8080</span>
+  </div>
+  <div class="wt-unsupported" id="echo-wt-warn">⚠️ このブラウザはWebTransportに対応していません（Chrome / Edge が必要です）</div>
+  <div class="conn-bar">
+    <div class="status-dot off" id="echo-dot"></div>
+    <input id="echo-url" value="ws://127.0.0.1:8080" placeholder="接続先URL">
+    <button class="btn btn-connect" id="echo-btn" onclick="toggleEcho()">接続</button>
+  </div>
+  <div class="hash-row" id="echo-hash-row" style="display:none">
+    <label>Cert Hash:</label>
+    <input id="echo-hash" placeholder="[12, 34, 56, ...]  ← サーバーのコンソール出力">
+  </div>
+  <div class="hash-hint" id="echo-hash-hint" style="display:none">サーバー起動時に出力される "Certificate Hash: [...]" の値を入力してください</div>
+  <div class="log" id="echo-log"></div>
+  <div class="input-row">
+    <input id="echo-input" placeholder="送信するメッセージ..." onkeydown="if(event.key==='Enter')sendEcho()">
+    <button class="btn btn-send" id="echo-send" onclick="sendEcho()" disabled>送信</button>
+  </div>
+</div>
+
+<!-- ===== BROADCAST ===== -->
+<div id="panel-broadcast" class="panel">
+  <div class="proto-row">
+    <div class="proto-toggle">
+      <button class="proto-btn active" id="bc-proto-ws" onclick="setBCProto('ws')">WebSocket</button>
+      <button class="proto-btn" id="bc-proto-wt" onclick="setBCProto('wt')">WebTransport</button>
+    </div>
+    <span class="proto-badge badge-ws" id="bc-badge">WS :8080</span>
+  </div>
+  <div class="wt-unsupported" id="bc-wt-warn">⚠️ このブラウザはWebTransportに対応していません（Chrome / Edge が必要です）</div>
+  <div class="conn-bar">
+    <div class="status-dot off" id="bc-dot"></div>
+    <input id="bc-url" value="ws://127.0.0.1:8080">
+    <button class="btn btn-connect" id="bc-btn" onclick="toggleBC()">接続</button>
+  </div>
+  <div class="hash-row" id="bc-hash-row" style="display:none">
+    <label>Cert Hash:</label>
+    <input id="bc-hash" placeholder="[12, 34, 56, ...]  ← サーバーのコンソール出力">
+  </div>
+  <div class="log" id="bc-log"></div>
+  <div class="input-row">
+    <input id="bc-input" placeholder="全員にブロードキャスト..." onkeydown="if(event.key==='Enter')sendBC()">
+    <button class="btn btn-send" id="bc-send" onclick="sendBC()" disabled>送信</button>
+  </div>
+</div>
+
+<!-- ===== ROOM CHAT ===== -->
+<div id="panel-room" class="panel">
+  <div class="proto-row">
+    <div class="proto-toggle">
+      <button class="proto-btn active" id="room-proto-ws" onclick="setRoomProto('ws')">WebSocket</button>
+      <button class="proto-btn" id="room-proto-wt" onclick="setRoomProto('wt')">WebTransport</button>
+    </div>
+    <span class="proto-badge badge-ws" id="room-badge">WS :8080</span>
+  </div>
+  <div class="wt-unsupported" id="room-wt-warn">⚠️ このブラウザはWebTransportに対応していません（Chrome / Edge が必要です）</div>
+  <div class="conn-bar">
+    <div class="status-dot off" id="room-dot"></div>
+    <input id="room-url" value="ws://127.0.0.1:8080">
+    <button class="btn btn-connect" id="room-btn" onclick="toggleRoom()">接続</button>
+  </div>
+  <div class="hash-row" id="room-hash-row" style="display:none">
+    <label>Cert Hash:</label>
+    <input id="room-hash" placeholder="[12, 34, 56, ...]  ← サーバーのコンソール出力">
+  </div>
+  <div class="chat-layout">
+    <div class="chat-sidebar">
+      <div class="sidebar-box">
+        <h3>My Nick</h3>
+        <div class="nick-display" id="room-nick">—</div>
+      </div>
+      <div class="sidebar-box">
+        <h3>コマンド</h3>
+        <span class="cmd-item" onclick="insertCmd('/nick ')">/nick &lt;name&gt;</span>
+        <span class="cmd-item" onclick="insertCmd('/join ')">/join &lt;room&gt;</span>
+        <span class="cmd-item" onclick="insertCmd('/list')">/list</span>
+      </div>
+    </div>
+    <div class="chat-main">
+      <div class="log" id="room-log"></div>
+      <div class="input-row">
+        <input id="room-input" placeholder="メッセージ or /nick /join /list ..." onkeydown="if(event.key==='Enter')sendRoom()">
+        <button class="btn btn-send" id="room-send" onclick="sendRoom()" disabled>送信</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SPATIAL 2D ===== -->
+<div id="panel-spatial" class="panel">
+  <div class="proto-row">
+    <div class="proto-toggle">
+      <button class="proto-btn active" id="sp-proto-ws" onclick="setSpProto('ws')">WebSocket</button>
+      <button class="proto-btn" id="sp-proto-wt" onclick="setSpProto('wt')">WebTransport</button>
+    </div>
+    <span class="proto-badge badge-ws" id="sp-badge">WS :8080</span>
+    <span style="font-size:.72rem;color:var(--muted)">クリックで移動 · interest_radius=200</span>
+  </div>
+  <div class="wt-unsupported" id="sp-wt-warn">⚠️ このブラウザはWebTransportに対応していません（Chrome / Edge が必要です）</div>
+  <div class="conn-bar">
+    <div class="status-dot off" id="sp-dot"></div>
+    <input id="sp-url" value="ws://127.0.0.1:8080" placeholder="接続先URL">
+    <button class="btn btn-connect" id="sp-btn" onclick="toggleSpatial()">接続</button>
+  </div>
+  <div class="hash-row" id="sp-hash-row" style="display:none">
+    <label>Cert Hash:</label>
+    <input id="sp-hash" placeholder="[12, 34, 56, ...]  ← サーバーのコンソール出力">
+  </div>
+  <div class="spatial-layout">
+    <div class="spatial-canvas-wrap" id="sp-wrap">
+      <canvas id="sp-canvas"></canvas>
+    </div>
+    <div class="spatial-info">
+      <div class="info-box">
+        <h3>My Status</h3>
+        <div style="font-family:monospace;font-size:.8rem;display:flex;flex-direction:column;gap:3px">
+          <div>ID: <span id="sp-myid" style="color:var(--green)">—</span></div>
+          <div>X: <span id="sp-myx">—</span> Y: <span id="sp-myy">—</span></div>
+          <div id="sp-proto-label" style="font-size:.72rem;color:var(--muted)">—</div>
+        </div>
+      </div>
+      <div class="info-box" style="flex:1;overflow:hidden;display:flex;flex-direction:column;">
+        <h3>Players</h3>
+        <div id="sp-players" style="overflow-y:auto;flex:1;"></div>
+      </div>
+      <div class="info-box">
+        <h3>Log</h3>
+        <div id="sp-log" style="font-family:monospace;font-size:.72rem;max-height:100px;overflow-y:auto;color:var(--muted);"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// Utilities
+// ============================================================
+const enc = new TextEncoder(), dec = new TextDecoder();
+function ts() { const d=new Date(); return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`; }
+function pad(n) { return String(n).padStart(2,'0'); }
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function appendLog(id, msg, cls) {
+  const el = document.getElementById(id);
+  const d = document.createElement('div');
+  d.className = 'log-line';
+  d.innerHTML = `<span class="log-ts">${ts()}</span><span class="${cls}">${esc(msg)}</span>`;
+  el.appendChild(d); el.scrollTop = el.scrollHeight;
+}
+function switchTab(name) {
+  const names = ['echo','broadcast','room','spatial'];
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', names[i]===name));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+  if (name==='spatial') resizeCanvas();
+}
+
+// WebTransport support check
+const wtSupported = typeof WebTransport !== 'undefined';
+
+function parseHash(str) {
+  const nums = str.replace(/[\[\]\s]/g,'').split(',').map(s=>parseInt(s,10)).filter(n=>!isNaN(n));
+  return new Uint8Array(nums);
+}
+
+// ============================================================
+// ECHO
+// ============================================================
+let echoProto = 'ws', echoWs = null, echoWt = null, echoWtReader = null;
+
+function setEchoProto(p) {
+  if (echoWs || echoWt) return; // 接続中は切り替え不可
+  echoProto = p;
+  document.getElementById('echo-proto-ws').classList.toggle('active', p==='ws');
+  document.getElementById('echo-proto-wt').classList.toggle('active', p==='wt');
+  const badge = document.getElementById('echo-badge');
+  if (p==='ws') {
+    badge.textContent='WS :8080'; badge.className='proto-badge badge-ws';
+    document.getElementById('echo-url').value='ws://127.0.0.1:8080';
+    document.getElementById('echo-hash-row').style.display='none';
+    document.getElementById('echo-hash-hint').style.display='none';
+    document.getElementById('echo-wt-warn').style.display='none';
+  } else {
+    badge.textContent='WebTransport :4433'; badge.className='proto-badge badge-wt';
+    document.getElementById('echo-url').value='https://127.0.0.1:4433';
+    document.getElementById('echo-hash-row').style.display='flex';
+    document.getElementById('echo-hash-hint').style.display='block';
+    if (!wtSupported) document.getElementById('echo-wt-warn').style.display='block';
+  }
+}
+
+async function toggleEcho() {
+  if (echoWs || echoWt) { echoWs?.close(); await echoWt?.close(); return; }
+  const url = document.getElementById('echo-url').value;
+  const log = 'echo-log';
+  if (echoProto === 'wt') {
+    if (!wtSupported) { appendLog(log,'WebTransportは非対応のブラウザです','log-err'); return; }
+    const hashStr = document.getElementById('echo-hash').value.trim();
+    if (!hashStr) { appendLog(log,'Cert Hash を入力してください','log-err'); return; }
+    appendLog(log, `WebTransport 接続中: ${url}`, 'log-sys');
+    try {
+      echoWt = new WebTransport(url, { serverCertificateHashes: [{ algorithm:'sha-256', value: parseHash(hashStr) }] });
+      await echoWt.ready;
+      appendLog(log, 'WebTransport 接続成功 🟠', 'log-sys');
+      setEchoState(true, 'wt');
+      echoReceiveLoop();
+      echoWt.closed.then(()=>{ appendLog(log,'切断しました','log-sys'); setEchoState(false,'wt'); echoWt=null; });
+    } catch(e) { appendLog(log,'接続エラー: '+e.message,'log-err'); echoWt=null; }
+    return;
+  }
+  appendLog(log, `WebSocket 接続中: ${url}`, 'log-sys');
+  echoWs = new WebSocket(url);
+  echoWs.onopen = () => { appendLog(log,'WebSocket 接続成功 🔵','log-sys'); setEchoState(true,'ws'); };
+  echoWs.onmessage = e => appendLog(log, `← ${e.data}`, 'log-recv');
+  echoWs.onerror = () => appendLog(log,'エラー','log-err');
+  echoWs.onclose = () => { appendLog(log,'切断しました','log-sys'); setEchoState(false,'ws'); echoWs=null; };
+}
+
+async function echoReceiveLoop() {
+  const reader = echoWt.datagrams.readable.getReader();
+  try {
+    while (true) {
+      const {value, done} = await reader.read();
+      if (done) break;
+      appendLog('echo-log', `← ${dec.decode(value)}`, 'log-recv-wt');
+    }
+  } catch(e) { /* closed */ } finally { reader.releaseLock(); }
+}
+
+function setEchoState(on, proto) {
+  const dot = document.getElementById('echo-dot');
+  dot.className = 'status-dot ' + (on ? (proto==='wt'?'wt-on':'on') : 'off');
+  document.getElementById('echo-btn').textContent = on?'切断':'接続';
+  document.getElementById('echo-btn').className = 'btn btn-connect'+(on?' connected':'');
+  document.getElementById('echo-send').disabled = !on;
+}
+
+async function sendEcho() {
+  const inp = document.getElementById('echo-input');
+  if (!inp.value.trim()) return;
+  const msg = inp.value; inp.value='';
+  appendLog('echo-log', `→ ${msg}`, 'log-sent');
+  if (echoWs) { echoWs.send(msg); return; }
+  if (echoWt) {
+    const w = echoWt.datagrams.writable.getWriter();
+    await w.write(enc.encode(msg));
+    w.releaseLock();
+  }
+}
+document.getElementById('echo-input').addEventListener('keydown', e => { if(e.key==='Enter') sendEcho(); });
+
+// ============================================================
+// BROADCAST CHAT
+// ============================================================
+let bcProto='ws', bcWs=null, bcWt=null;
+
+function setBCProto(p) {
+  if(bcWs||bcWt) return;
+  bcProto=p;
+  document.getElementById('bc-proto-ws').classList.toggle('active',p==='ws');
+  document.getElementById('bc-proto-wt').classList.toggle('active',p==='wt');
+  const badge=document.getElementById('bc-badge');
+  if(p==='ws'){
+    badge.textContent='WS :8080'; badge.className='proto-badge badge-ws';
+    document.getElementById('bc-url').value='ws://127.0.0.1:8080';
+    document.getElementById('bc-hash-row').style.display='none';
+    document.getElementById('bc-wt-warn').style.display='none';
+  } else {
+    badge.textContent='WebTransport :4433'; badge.className='proto-badge badge-wt';
+    document.getElementById('bc-url').value='https://127.0.0.1:4433';
+    document.getElementById('bc-hash-row').style.display='flex';
+    if(!wtSupported) document.getElementById('bc-wt-warn').style.display='block';
+  }
+}
+
+async function toggleBC() {
+  if(bcWs||bcWt){ bcWs?.close(); await bcWt?.close(); return; }
+  const url=document.getElementById('bc-url').value;
+  if(bcProto==='wt'){
+    if(!wtSupported){ appendLog('bc-log','WebTransportは非対応のブラウザです','log-err'); return; }
+    const hashStr=document.getElementById('bc-hash').value.trim();
+    if(!hashStr){ appendLog('bc-log','Cert Hash を入力してください','log-err'); return; }
+    appendLog('bc-log',`WebTransport 接続中: ${url}`,'log-sys');
+    try{
+      bcWt=new WebTransport(url,{serverCertificateHashes:[{algorithm:'sha-256',value:parseHash(hashStr)}]});
+      await bcWt.ready;
+      appendLog('bc-log','接続成功 🟠','log-sys'); setBCState(true,'wt');
+      (async()=>{
+        const reader=bcWt.datagrams.readable.getReader();
+        try{ while(true){ const{value,done}=await reader.read(); if(done)break; appendLog('bc-log',dec.decode(value),'log-recv-wt'); } }
+        catch(e){} finally{ reader.releaseLock(); }
+      })();
+      bcWt.closed.then(()=>{ appendLog('bc-log','切断','log-sys'); setBCState(false,'wt'); bcWt=null; });
+    } catch(e){ appendLog('bc-log','接続エラー: '+e.message,'log-err'); bcWt=null; }
+    return;
+  }
+  appendLog('bc-log',`WebSocket 接続中: ${url}`,'log-sys');
+  bcWs=new WebSocket(url);
+  bcWs.onopen=()=>{ appendLog('bc-log','接続成功 🔵','log-sys'); setBCState(true,'ws'); };
+  bcWs.onmessage=e=>appendLog('bc-log',e.data,'log-recv');
+  bcWs.onerror=()=>appendLog('bc-log','エラー','log-err');
+  bcWs.onclose=()=>{ appendLog('bc-log','切断','log-sys'); setBCState(false,'ws'); bcWs=null; };
+}
+function setBCState(on,proto) {
+  document.getElementById('bc-dot').className='status-dot '+(on?(proto==='wt'?'wt-on':'on'):'off');
+  document.getElementById('bc-btn').textContent=on?'切断':'接続';
+  document.getElementById('bc-btn').className='btn btn-connect'+(on?' connected':'');
+  document.getElementById('bc-send').disabled=!on;
+}
+async function sendBC() {
+  const inp=document.getElementById('bc-input');
+  if(!inp.value.trim()) return;
+  const msg=inp.value; inp.value='';
+  appendLog('bc-log',`→ ${msg}`,'log-sent');
+  if(bcWs) bcWs.send(msg);
+  if(bcWt){ const w=bcWt.datagrams.writable.getWriter(); await w.write(enc.encode(msg)); w.releaseLock(); }
+}
+document.getElementById('bc-input').addEventListener('keydown',e=>{if(e.key==='Enter')sendBC();});
+
+// ============================================================
+// ROOM CHAT
+// ============================================================
+let roomProto='ws', roomWs=null, roomWt=null;
+
+function setRoomProto(p) {
+  if(roomWs||roomWt) return;
+  roomProto=p;
+  document.getElementById('room-proto-ws').classList.toggle('active',p==='ws');
+  document.getElementById('room-proto-wt').classList.toggle('active',p==='wt');
+  const badge=document.getElementById('room-badge');
+  if(p==='ws'){
+    badge.textContent='WS :8080'; badge.className='proto-badge badge-ws';
+    document.getElementById('room-url').value='ws://127.0.0.1:8080';
+    document.getElementById('room-hash-row').style.display='none';
+    document.getElementById('room-wt-warn').style.display='none';
+  } else {
+    badge.textContent='WebTransport :4433'; badge.className='proto-badge badge-wt';
+    document.getElementById('room-url').value='https://127.0.0.1:4433';
+    document.getElementById('room-hash-row').style.display='flex';
+    if(!wtSupported) document.getElementById('room-wt-warn').style.display='block';
+  }
+}
+
+async function toggleRoom() {
+  if(roomWs||roomWt){ roomWs?.close(); await roomWt?.close(); return; }
+  const url=document.getElementById('room-url').value;
+  if(roomProto==='wt'){
+    if(!wtSupported){ appendLog('room-log','WebTransportは非対応のブラウザです','log-err'); return; }
+    const hashStr=document.getElementById('room-hash').value.trim();
+    if(!hashStr){ appendLog('room-log','Cert Hash を入力してください','log-err'); return; }
+    appendLog('room-log',`WebTransport 接続中: ${url}`,'log-sys');
+    try{
+      roomWt=new WebTransport(url,{serverCertificateHashes:[{algorithm:'sha-256',value:parseHash(hashStr)}]});
+      await roomWt.ready;
+      appendLog('room-log','接続成功 🟠。/nick でニックネームを設定してください','log-sys');
+      setRoomState(true,'wt');
+      (async()=>{
+        const reader=roomWt.datagrams.readable.getReader();
+        try{ while(true){ const{value,done}=await reader.read(); if(done)break; appendLog('room-log',dec.decode(value),'log-recv-wt'); } }
+        catch(e){} finally{ reader.releaseLock(); }
+      })();
+      roomWt.closed.then(()=>{ appendLog('room-log','切断','log-sys'); setRoomState(false,'wt'); roomWt=null; document.getElementById('room-nick').textContent='—'; });
+    } catch(e){ appendLog('room-log','接続エラー: '+e.message,'log-err'); roomWt=null; }
+    return;
+  }
+  appendLog('room-log',`WebSocket 接続中: ${url}`,'log-sys');
+  roomWs=new WebSocket(url);
+  roomWs.onopen=()=>{ appendLog('room-log','接続成功 🔵。/nick でニックネームを設定してください','log-sys'); setRoomState(true,'ws'); };
+  roomWs.onmessage=e=>appendLog('room-log',e.data,'log-recv');
+  roomWs.onerror=()=>appendLog('room-log','エラー','log-err');
+  roomWs.onclose=()=>{ appendLog('room-log','切断','log-sys'); setRoomState(false,'ws'); roomWs=null; document.getElementById('room-nick').textContent='—'; };
+}
+function setRoomState(on,proto) {
+  document.getElementById('room-dot').className='status-dot '+(on?(proto==='wt'?'wt-on':'on'):'off');
+  document.getElementById('room-btn').textContent=on?'切断':'接続';
+  document.getElementById('room-btn').className='btn btn-connect'+(on?' connected':'');
+  document.getElementById('room-send').disabled=!on;
+}
+async function sendRoom() {
+  const inp=document.getElementById('room-input');
+  if(!inp.value.trim()) return;
+  const msg=inp.value.trim(); inp.value='';
+  const m=msg.match(/^\/nick\s+(\S+)/);
+  if(m) document.getElementById('room-nick').textContent=m[1];
+  appendLog('room-log',`→ ${msg}`,'log-sent');
+  if(roomWs) roomWs.send(msg);
+  if(roomWt){ const w=roomWt.datagrams.writable.getWriter(); await w.write(enc.encode(msg)); w.releaseLock(); }
+}
+function insertCmd(c) { const i=document.getElementById('room-input'); i.value=c; i.focus(); }
+document.getElementById('room-input').addEventListener('keydown',e=>{if(e.key==='Enter')sendRoom();});
+
+// ============================================================
+// SPATIAL 2D
+// ============================================================
+let spProto='ws', spWs=null, spWt=null, myId=null;
+const players={};
+let canvasW=600, canvasH=400;
+
+function setSpProto(p) {
+  if (spWs||spWt) return;
+  spProto=p;
+  document.getElementById('sp-proto-ws').classList.toggle('active',p==='ws');
+  document.getElementById('sp-proto-wt').classList.toggle('active',p==='wt');
+  const badge=document.getElementById('sp-badge');
+  if(p==='ws'){
+    badge.textContent='WS :8080'; badge.className='proto-badge badge-ws';
+    document.getElementById('sp-url').value='ws://127.0.0.1:8080';
+    document.getElementById('sp-hash-row').style.display='none';
+    document.getElementById('sp-wt-warn').style.display='none';
+  } else {
+    badge.textContent='WebTransport :4433'; badge.className='proto-badge badge-wt';
+    document.getElementById('sp-url').value='https://127.0.0.1:4433';
+    document.getElementById('sp-hash-row').style.display='flex';
+    if(!wtSupported) document.getElementById('sp-wt-warn').style.display='block';
+  }
+}
+
+async function toggleSpatial() {
+  if(spWs||spWt){ spWs?.close(); await spWt?.close(); return; }
+  const url=document.getElementById('sp-url').value;
+  if(spProto==='wt'){
+    if(!wtSupported){ spLog('WebTransportは非対応のブラウザです'); return; }
+    const hashStr=document.getElementById('sp-hash').value.trim();
+    if(!hashStr){ spLog('Cert Hash を入力してください'); return; }
+    spLog(`WebTransport 接続中: ${url}`);
+    try{
+      spWt=new WebTransport(url,{serverCertificateHashes:[{algorithm:'sha-256',value:parseHash(hashStr)}]});
+      await spWt.ready;
+      spLog('接続成功 🟠');
+      setSpState(true,'wt');
+      document.getElementById('sp-proto-label').textContent='via WebTransport';
+      document.getElementById('sp-proto-label').style.color='var(--orange)';
+      spReceiveLoop();
+      spWt.closed.then(()=>{
+        spLog('切断しました'); setSpState(false,'wt'); spWt=null; myId=null;
+        Object.keys(players).forEach(k=>delete players[k]);
+        drawSpatial(); updatePlayerList();
+        document.getElementById('sp-myid').textContent='—';
+        document.getElementById('sp-myx').textContent='—';
+        document.getElementById('sp-myy').textContent='—';
+        document.getElementById('sp-proto-label').textContent='—';
+        document.getElementById('sp-proto-label').style.color='var(--muted)';
+      });
+    } catch(e){ spLog('接続エラー: '+e.message); spWt=null; }
+    return;
+  }
+  spLog(`WebSocket 接続中: ${url}`);
+  spWs=new WebSocket(url);
+  spWs.onopen=()=>{ spLog('接続成功 🔵'); setSpState(true,'ws');
+    document.getElementById('sp-proto-label').textContent='via WebSocket';
+    document.getElementById('sp-proto-label').style.color='var(--blue)'; };
+  spWs.onmessage=e=>parseSpatialMsg(e.data);
+  spWs.onerror=()=>spLog('エラー');
+  spWs.onclose=()=>{
+    spLog('切断しました'); setSpState(false,'ws'); spWs=null; myId=null;
+    Object.keys(players).forEach(k=>delete players[k]);
+    drawSpatial(); updatePlayerList();
+    document.getElementById('sp-myid').textContent='—';
+    document.getElementById('sp-myx').textContent='—';
+    document.getElementById('sp-myy').textContent='—';
+    document.getElementById('sp-proto-label').textContent='—';
+    document.getElementById('sp-proto-label').style.color='var(--muted)';
+  };
+}
+
+async function spReceiveLoop() {
+  const reader=spWt.datagrams.readable.getReader();
+  try{
+    while(true){
+      const {value,done}=await reader.read();
+      if(done) break;
+      parseSpatialMsg(dec.decode(value));
+    }
+  } catch(e){} finally{ reader.releaseLock(); }
+}
+
+function setSpState(on,proto) {
+  const dot=document.getElementById('sp-dot');
+  dot.className='status-dot '+(on?(proto==='wt'?'wt-on':'on'):'off');
+  document.getElementById('sp-btn').textContent=on?'切断':'接続';
+  document.getElementById('sp-btn').className='btn btn-connect'+(on?' connected':'');
+}
+
+function parseSpatialMsg(txt) {
+  const hm=txt.match(/^hello\s+(\S+)/);
+  if(hm){ myId=hm[1]; document.getElementById('sp-myid').textContent=myId;
+    if(!players[myId]) players[myId]={x:canvasW/2,y:canvasH/2};
+    spLog('自分のID: '+myId); updatePlayerList(); drawSpatial(); return; }
+  const pm=txt.match(/^pos\s+(\S+)\s+([\d.\-]+)\s+([\d.\-]+)/);
+  if(pm){
+    const id=pm[1],x=parseFloat(pm[2]),y=parseFloat(pm[3]);
+    players[id]={x,y};
+    if(id===myId){ document.getElementById('sp-myx').textContent=x.toFixed(1); document.getElementById('sp-myy').textContent=y.toFixed(1); }
+    updatePlayerList(); drawSpatial(); return;
+  }
+  spLog('← '+txt);
+}
+
+function spLog(msg) {
+  const el=document.getElementById('sp-log');
+  el.innerHTML+=`<div>${esc(msg)}</div>`; el.scrollTop=el.scrollHeight;
+}
+
+function updatePlayerList() {
+  document.getElementById('sp-players').innerHTML=Object.entries(players).map(([id,p])=>{
+    const isMe=id===myId;
+    return `<div class="player-item" style="color:${isMe?'var(--green)':'var(--cyan)'}">
+      ${isMe?'★':'·'} ${esc(id)}<br>
+      <span style="color:var(--muted);font-size:.7rem">(${p.x.toFixed(0)}, ${p.y.toFixed(0)})</span>
+    </div>`;
+  }).join('');
+}
+
+function resizeCanvas() {
+  const wrap=document.getElementById('sp-wrap');
+  const canvas=document.getElementById('sp-canvas');
+  canvasW=wrap.clientWidth; canvasH=wrap.clientHeight;
+  canvas.width=canvasW; canvas.height=canvasH;
+  drawSpatial();
+}
+window.addEventListener('resize',resizeCanvas);
+
+function drawSpatial() {
+  const canvas=document.getElementById('sp-canvas');
+  const ctx=canvas.getContext('2d');
+  ctx.clearRect(0,0,canvasW,canvasH);
+  ctx.strokeStyle='#0a2235'; ctx.lineWidth=1;
+  for(let x=0;x<canvasW;x+=50){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,canvasH);ctx.stroke();}
+  for(let y=0;y<canvasH;y+=50){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(canvasW,y);ctx.stroke();}
+  if(myId&&players[myId]){
+    const me=players[myId];
+    ctx.beginPath(); ctx.arc(me.x,me.y,200,0,Math.PI*2);
+    ctx.strokeStyle='rgba(130,170,255,0.12)'; ctx.lineWidth=1; ctx.stroke();
+    ctx.fillStyle='rgba(130,170,255,0.04)'; ctx.fill();
+  }
+  Object.entries(players).forEach(([id,p])=>{
+    const isMe=id===myId, r=isMe?10:7;
+    ctx.beginPath(); ctx.arc(p.x,p.y,r,0,Math.PI*2);
+    ctx.fillStyle=isMe?'#22da6e':'#50ccb8'; ctx.fill();
+    ctx.strokeStyle=isMe?'#fff':'rgba(255,255,255,.3)'; ctx.lineWidth=isMe?2:1; ctx.stroke();
+    ctx.fillStyle=isMe?'#fff':'#d6deeb'; ctx.font=`${isMe?11:9}px monospace`; ctx.textAlign='center';
+    ctx.fillText(id.length>6?id.slice(0,6)+'…':id, p.x, p.y-r-4);
+  });
+}
+
+document.getElementById('sp-canvas').addEventListener('click', async e=>{
+  if(!spWs&&!spWt) return;
+  const wrap=document.getElementById('sp-wrap');
+  const rect=wrap.getBoundingClientRect();
+  const x=Math.round(e.clientX-rect.left), y=Math.round(e.clientY-rect.top);
+  const cmd=`/move ${x} ${y}`;
+  if(spWs){ spWs.send(cmd); }
+  if(spWt){ const w=spWt.datagrams.writable.getWriter(); await w.write(enc.encode(cmd)); w.releaseLock(); }
+});
+
+setTimeout(resizeCanvas,100);
+</script>
+</body>
+</html>
