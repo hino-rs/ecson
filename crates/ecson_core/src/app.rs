@@ -194,6 +194,83 @@ impl EcsonApp {
 
         self
     }
+
+    /// Startupを1回実行します
+    pub fn startup(&mut self) {
+        if let Some(startup) = self.schedules.get_mut(Startup) {
+            startup.run(&mut self.world);
+        }
+    }
+
+    /// UpdateとFixedUpdateを1回分実行します
+    pub fn tick_once(&mut self) {
+        if let Some(update_schedule) = self.schedules.get_mut(Update) {
+            update_schedule.run(&mut self.world);
+        }
+        if let Some(fixed_update) = self.schedules.get_mut(FixedUpdate) {
+            fixed_update.run(&mut self.world);
+        }
+    }
+
+    /// UpdateとFixedUpdateをn回分実行します
+    pub fn tick_n(&mut self, n: u128) {
+        // サーバーのコンフィグを取得
+        let config = self
+            .world
+            .get_resource::<ServerTimeConfig>()
+            .cloned()
+            .unwrap_or_default();
+
+        let fixed_timestep = Duration::from_secs_f64(1.0 / config.tick_rate);
+        let max_ticks_per_frame = config.max_ticks_per_frame;
+        let update_sleep = Duration::from_micros((config.update_sleep * 1000.0) as u64);
+
+        let mut previous_time = Instant::now();
+        let mut accumulator = Duration::ZERO;
+
+        // =========================================================
+        // メインループ
+        // =========================================================
+        for _ in 0..n {
+            let current_time = Instant::now();
+            let delta_time = current_time.duration_since(previous_time);
+            previous_time = current_time;
+
+            accumulator += delta_time;
+
+            // -----------------------------------------------------
+            // Update スケジュールの実行
+            // -----------------------------------------------------
+            if let Some(update_schedule) = self.schedules.get_mut(Update) {
+                update_schedule.run(&mut self.world);
+            }
+
+            // -----------------------------------------------------
+            // FixedUpdate スケジュールの実行
+            // -----------------------------------------------------
+            let mut ticks = 0;
+            while accumulator >= fixed_timestep {
+                if let Some(fixed_update) = self.schedules.get_mut(FixedUpdate) {
+                    fixed_update.run(&mut self.world);
+                }
+                accumulator -= fixed_timestep;
+                ticks += 1;
+
+                if ticks >= max_ticks_per_frame {
+                    if config.warn_on_lag {
+                        warn!("[Warning] Server is severely lagging! Skipping fixed frames.");
+                    }
+                    accumulator = Duration::ZERO;
+                    break;
+                }
+            }
+
+            // -----------------------------------------------------
+            // CPU負荷軽減のためのスリープ
+            // -----------------------------------------------------
+            std::thread::sleep(update_sleep);
+        }
+    }
 }
 
 #[cfg(test)]

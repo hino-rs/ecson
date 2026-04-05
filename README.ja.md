@@ -1,6 +1,6 @@
 # Ecson
 
-[English](./README.md)
+[English](https://github.com/hino-rs/ecson/blob/main/README.md)
 
 > Rust向けの、ECS駆動なステートフル双方向サーバーフレームワーク
 
