@@ -64,13 +64,14 @@ impl Plugin for PresencePlugin {
 
         app.add_event::<PresenceChangedEvent>();
 
-        app.add_systems(Update, parse_presence_messages_system);
         app.add_systems(
-            FixedUpdate,
+            Update,
             (
+                parse_presence_messages_system,
                 handle_presence_update_system,
                 handle_presence_disconnect_system,
-            ),
+            )
+                .chain(),
         );
     }
 }

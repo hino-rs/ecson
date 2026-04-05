@@ -89,14 +89,10 @@ impl Plugin for Spatial2DPlugin {
             (
                 systems::setup_spatial_2d_system,
                 systems::parse_move_messages_system,
-            ),
-        );
-        app.add_systems(
-            FixedUpdate,
-            (
                 systems::handle_move_2d_system,
                 systems::broadcast_nearby_2d_system,
-            ),
+            )
+                .chain(),
         );
     }
 }
@@ -163,14 +159,10 @@ impl Plugin for Spatial3DFlatPlugin {
             (
                 systems::setup_spatial_3d_flat_system,
                 systems::parse_move_messages_system,
-            ),
-        );
-        app.add_systems(
-            FixedUpdate,
-            (
                 systems::handle_move_3d_flat_system,
                 systems::broadcast_nearby_3d_flat_system,
-            ),
+            )
+                .chain(),
         );
     }
 }
@@ -233,14 +225,10 @@ impl Plugin for Spatial3DPlugin {
             (
                 systems::setup_spatial_3d_system,
                 systems::parse_move_messages_system,
-            ),
-        );
-        app.add_systems(
-            FixedUpdate,
-            (
                 systems::handle_move_3d_system,
                 systems::broadcast_nearby_3d_system,
-            ),
+            )
+                .chain(),
         );
     }
 }

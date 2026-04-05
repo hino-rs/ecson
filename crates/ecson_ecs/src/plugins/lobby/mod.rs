@@ -127,16 +127,17 @@ impl Plugin for LobbyPlugin {
         app.add_event::<PlayerLeftLobbyEvent>();
         app.add_event::<LobbyReadyEvent>();
 
-        app.add_systems(Update, parse_lobby_messages_system);
         app.add_systems(
-            FixedUpdate,
+            Update,
             (
+                parse_lobby_messages_system,
                 handle_lobby_create_system,
                 handle_lobby_join_system,
                 handle_lobby_leave_system,
                 handle_lobby_list_system,
                 handle_lobby_disconnect_system,
-            ),
+            )
+                .chain(),
         );
     }
 }
