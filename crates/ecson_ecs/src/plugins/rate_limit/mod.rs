@@ -117,11 +117,11 @@ impl RateLimitPlugin {
 }
 
 impl Plugin for RateLimitPlugin {
-    fn build(self, app: &mut EcsonApp) {
+    fn build(&self, app: &mut EcsonApp) {
         app.world.insert_resource(RateLimitConfig {
             window_secs: self.window_secs,
             max_messages: self.max_messages,
-            action: self.action,
+            action: self.action.clone(),
         });
 
         app.add_event::<RateLimitExceededEvent>();

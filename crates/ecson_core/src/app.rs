@@ -95,6 +95,7 @@ pub struct EcsonApp {
     pub world: World,
     /// システムが登録され、実行されるスケジュール方式。
     pub schedules: Schedules,
+    pub plugins: Vec<Box<dyn Plugin>>,
 }
 
 impl Default for EcsonApp {
@@ -117,7 +118,11 @@ impl Default for EcsonApp {
         schedules.insert(Schedule::new(FixedUpdate));
         schedules.insert(Schedule::new(Shutdown));
 
-        EcsonApp { world, schedules }
+        EcsonApp {
+            world,
+            schedules,
+            plugins: Vec::new(),
+        }
     }
 }
 
@@ -225,6 +230,10 @@ impl EcsonApp {
             // 例: 1ms スリープ → Update は最大 ~1000回/秒 まで回る。
             // -----------------------------------------------------
             std::thread::sleep(update_sleep);
+        }
+        info!("Cleaning up plugins...");
+        for plugin in &self.plugins {
+            plugin.cleanup(&mut self.world);
         }
         info!("Running Shutdown schedule...");
         if let Some(shutdown_schedule) = self.schedules.get_mut(Shutdown) {

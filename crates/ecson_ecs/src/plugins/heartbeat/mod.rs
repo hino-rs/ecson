@@ -105,12 +105,12 @@ impl HeartbeatPlugin {
 }
 
 impl Plugin for HeartbeatPlugin {
-    fn build(self, app: &mut EcsonApp) {
+    fn build(&self, app: &mut EcsonApp) {
         app.world.insert_resource(HeartbeatConfig {
             interval_secs: self.interval_secs,
             timeout_secs: self.timeout_secs,
-            ping_payload: self.ping_payload,
-            pong_payload: self.pong_payload,
+            ping_payload: self.ping_payload.clone(),
+            pong_payload: self.pong_payload.clone(),
         });
 
         app.add_event::<ClientTimedOutEvent>();

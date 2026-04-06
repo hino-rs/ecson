@@ -75,7 +75,7 @@ impl Spatial2DPlugin {
 }
 
 impl Plugin for Spatial2DPlugin {
-    fn build(self, app: &mut EcsonApp) {
+    fn build(&self, app: &mut EcsonApp) {
         app.world.insert_resource(SpatialConfig {
             interest_radius: self.interest_radius,
             zone_size: self.zone_size,
@@ -145,7 +145,7 @@ impl Spatial3DFlatPlugin {
 }
 
 impl Plugin for Spatial3DFlatPlugin {
-    fn build(self, app: &mut EcsonApp) {
+    fn build(&self, app: &mut EcsonApp) {
         app.world.insert_resource(SpatialConfig {
             interest_radius: self.interest_radius,
             zone_size: self.zone_size,
@@ -211,7 +211,7 @@ impl Spatial3DPlugin {
 }
 
 impl Plugin for Spatial3DPlugin {
-    fn build(self, app: &mut EcsonApp) {
+    fn build(&self, app: &mut EcsonApp) {
         app.world.insert_resource(SpatialConfig {
             interest_radius: self.interest_radius,
             zone_size: self.zone_size,
