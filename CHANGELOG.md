@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.1.1] - 2026-04-06
+
+### Added
+
+#### Core Framework
+
+Added new methods to `EcsonApp`:
+
+- `startup`: Executes `Startup` once.
+- `tick_once`: Executes `Update` and `FixedUpdate` once.
+- `tick_n(n)`: Executes `Update` and `FixedUpdate` n times.
+
+#### Documentation
+
+- [CHANGELOG.ja.md](./CHANGELOG.ja.md)
+
+### Fixed
+
+#### Networking
+
+In v0.1.0, spawning separate threads and Tokio runtimes for each protocol led to redundant resource consumption. This update switches to using shared runtime handles, making the system much more resource-efficient.
+
+#### Built-in Plugins
+
+- Refined the schedules for each plugin.
+- Implemented `.chain` to guarantee the correct execution order during system registration.
+
+---
+
 ## [0.1.0] - 2026-04-04
 
 ### Initial Release
@@ -18,45 +47,46 @@ An experimental implementation of an ECS-driven stateful bidirectional server fr
 
 #### Core Framework
 
-- `EcsonApp` — Application entry point. Integrates the ECS World and scheduler.
+- `EcsonApp`: Application entry point. Integrates the ECS World and scheduler.
 - Lock-free parallel system execution via the ECS scheduler.
 - Support for `Update` and `FixedUpdate` schedules.
 - One-stop import for public APIs via `ecson::prelude::*`.
 
 #### Networking
 
-- `EcsonWebSocketPlugin` — WebSocket (WS) server (general purpose for development and production).
-- `EcsonWebSocketTlsPlugin` — WebSocket over TLS (WSS) server (requires PEM certificate).
-- `EcsonWebSocketTlsDevPlugin` — Development WSS server with auto-generated self-signed certificates.
-- `EcsonWebTransportDevPlugin` — WebTransport (HTTP/3 / QUIC) development server (low-latency datagram communication).
+- `EcsonWebSocketPlugin`: WebSocket (WS) server (general purpose for development and production).
+- `EcsonWebSocketTlsPlugin`: WebSocket over TLS (WSS) server (requires PEM certificate).
+- `EcsonWebSocketTlsDevPlugin`: Development WSS server with auto-generated self-signed certificates.
+- `EcsonWebTransportDevPlugin`: WebTransport (HTTP/3 / QUIC) development server (low-latency datagram communication).
 - ECS-based networking event API utilizing `MessageReceived`, `SendMessage`, and `UserDisconnected`.
 
 #### Built-in Plugins
 
-- `HeartbeatPlugin` — Liveness monitoring and automatic disconnection via Ping/Pong (`ClientTimedOutEvent`).
-- `RateLimitPlugin` — Message transmission rate limiting (Drop / Throttle / Disconnect).
-- `PresencePlugin` — Client presence state management (Online / Away / Busy).
-- `SnapshotPlugin` — Periodic snapshot transmission of ECS components (supports differential mode).
-- `LobbyPlugin` — Lobby functionality for matchmaking (`LobbyReadyEvent`).
-- `ChatCorePlugin` — Nickname setup and global broadcasting.
-- `ChatRoomPlugin` — Room join/leave and listing functionality (used alongside `ChatCorePlugin`).
-- `ChatFullPlugin` — All-in-one plugin combining all Chat-related features.
-- `Spatial2DPlugin` — 2D spatial position management and AOI (Area of Interest) notifications.
-- `Spatial3DFlatPlugin` — AOI notifications for ground-based 3D spaces (e.g., RPGs, MOBAs).
-- `Spatial3DPlugin` — AOI notifications for full 3D spaces (e.g., space or flight simulators).
+- `HeartbeatPlugin`: Liveness monitoring and automatic disconnection via Ping/Pong (`ClientTimedOutEvent`).
+- `RateLimitPlugin`: Message transmission rate limiting (Drop / Throttle / Disconnect).
+- `PresencePlugin`: Client presence state management (Online / Away / Busy).
+- `SnapshotPlugin`: Periodic snapshot transmission of ECS components (supports differential mode).
+- `LobbyPlugin`: Lobby functionality for matchmaking (`LobbyReadyEvent`).
+- `ChatCorePlugin`: Nickname setup and global broadcasting.
+- `ChatRoomPlugin`: Room join/leave and listing functionality (used alongside `ChatCorePlugin`).
+- `ChatFullPlugin`: All-in-one plugin combining all Chat-related features.
+- `Spatial2DPlugin`: 2D spatial position management and AOI (Area of Interest) notifications.
+- `Spatial3DFlatPlugin`: AOI notifications for ground-based 3D spaces (e.g., RPGs, MOBAs).
+- `Spatial3DPlugin`: AOI notifications for full 3D spaces (e.g., space or flight simulators).
 
 #### Examples
 
-- `examples/echo.rs` — Echo server for connected clients.
-- `examples/broadcast_chat.rs` — Broadcast chat to all clients.
-- `examples/room_chat.rs` — Room-based chat.
+- `examples/echo.rs`: Echo server for connected clients.
+- `examples/broadcast_chat.rs`: Broadcast chat to all clients.
+- `examples/room_chat.rs`: Room-based chat.
 
 #### Documentation
 
-[official](https://ecson.netlify.app/)
+- [Official Documentation](https://ecson.netlify.app/)
 
 ---
 
 > ⚠️ **This version is experimental.** It is not recommended for production use. APIs are subject to change without notice.
 
+[0.1.1]: https://github.com/hino-rs/ecson/releases/tag/v0.1.1
 [0.1.0]: https://github.com/hino-rs/ecson/releases/tag/v0.1.0

@@ -1,9 +1,38 @@
-# Changelog
+# 変更履歴
 
-このプロジェクトのすべての変更はこのファイルに記録されます。
+このプロジェクトの主要な変更はすべてこのファイルに記録されます。
 
-フォーマットは [Keep a Changelog](https://keepachangelog.com/ja/1.1.0/) に準拠し、
-バージョン管理は [Semantic Versioning](https://semver.org/lang/ja/) に従います。
+フォーマットは [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) に基づき、
+バージョン管理は [Semantic Versioning](https://semver.org/) に準拠しています。
+
+---
+
+## [0.1.1] - 2026-04-06
+
+### 追加
+
+#### コアフレームワーク
+
+`EcsonApp` に以下のメソッドを追加しました：
+
+- `startup`: `Startup` を一度だけ実行します。
+- `tick_once`: `Update` と `FixedUpdate` を一度だけ実行します。
+- `tick_n(n)`: `Update` と `FixedUpdate` を n 回実行します。
+
+#### ドキュメント
+
+- [CHANGELOG.ja.md](./CHANGELOG.ja.md)
+
+### 修正
+
+#### ネットワーキング
+
+v0.1.0 では、プロトコルごとに個別のスレッドと Tokio ランタイムを起動していたため、リソースの重複消費が発生していました。今回の更新では共有ランタイムハンドルを使用するよう変更し、システム全体のリソース効率が大幅に向上しました。
+
+#### 組み込みプラグイン
+
+- 各プラグインのスケジュールを整理・改善しました。
+- システム登録時の実行順序を保証するため、`.chain` を実装しました。
 
 ---
 
@@ -11,55 +40,53 @@
 
 ### 初回リリース
 
-Ecson の最初の公開バージョンです。
-`tokio` の非同期I/Oと `bevy_ecs` のデータ志向設計を組み合わせた、
-ECS駆動のステートフル双方向サーバーフレームワークの実験的実装です。
+Ecson の最初の公開リリースです。
+`tokio` の非同期 I/O と `bevy_ecs` のデータ指向設計を組み合わせた、ECS 駆動のステートフル双方向サーバーフレームワークの実験的実装です。
 
-### Added
+### 追加
 
 #### コアフレームワーク
 
-- `EcsonApp` — アプリケーションのエントリーポイント。ECSワールドとスケジューラを統合
-- ECSスケジューラによる並列システム実行（ロック不要）
-- `Update` / `FixedUpdate` スケジュールのサポート
-- `ecson::prelude::*` による公開APIのワンストップインポート
+- `EcsonApp`: アプリケーションのエントリーポイント。ECS World とスケジューラーを統合します。
+- ECS スケジューラーによるロックフリーの並列システム実行。
+- `Update` および `FixedUpdate` スケジュールのサポート。
+- `ecson::prelude::*` による公開 API の一括インポート。
 
-#### ネットワーク
+#### ネットワーキング
 
-- `EcsonWebSocketPlugin` — WebSocket (WS) サーバー（開発・本番汎用）
-- `EcsonWebSocketTlsPlugin` — TLS付きWebSocket (WSS) サーバー（PEM証明書指定）
-- `EcsonWebSocketTlsDevPlugin` — 自己署名証明書を自動生成する開発用WSSサーバー
-- `EcsonWebTransportDevPlugin` — WebTransport (HTTP/3 / QUIC) 開発用サーバー（低レイテンシ・データグラム通信）
-- `MessageReceived` / `SendMessage` / `UserDisconnected` によるECSベースのネットワークイベントAPI
+- `EcsonWebSocketPlugin`: WebSocket (WS) サーバー（開発・本番共用の汎用サーバー）。
+- `EcsonWebSocketTlsPlugin`: WebSocket over TLS (WSS) サーバー（PEM 証明書が必要）。
+- `EcsonWebSocketTlsDevPlugin`: 自己署名証明書を自動生成する開発用 WSS サーバー。
+- `EcsonWebTransportDevPlugin`: WebTransport (HTTP/3 / QUIC) 開発用サーバー（低遅延データグラム通信）。
+- `MessageReceived`・`SendMessage`・`UserDisconnected` を活用した ECS ベースのネットワーキングイベント API。
 
 #### 組み込みプラグイン
 
-- `HeartbeatPlugin` — Ping/Pong による死活監視と自動切断（`ClientTimedOutEvent`）
-- `RateLimitPlugin` — メッセージ送信頻度の制限（Drop / Throttle / Disconnect）
-- `PresencePlugin` — クライアントの在席状態管理（Online / Away / Busy）
-- `SnapshotPlugin` — ECSコンポーネントの定期スナップショット送信（差分モード対応）
-- `LobbyPlugin` — マッチメイキング向けロビー機能（`LobbyReadyEvent`）
-- `ChatCorePlugin` — ニックネーム設定・全体ブロードキャスト
-- `ChatRoomPlugin` — ルーム参加・退出・一覧取得（`ChatCorePlugin` との併用）
-- `ChatFullPlugin` — Chat系機能をすべてまとめたオールインワンプラグイン
-- `Spatial2DPlugin` — 2D空間の位置管理とAOI（Area of Interest）通知
-- `Spatial3DFlatPlugin` — 地上系3D空間（RPG・MOBAなど）向けAOI通知
-- `Spatial3DPlugin` — 完全3D空間（宇宙・飛行シムなど）向けAOI通知
+- `HeartbeatPlugin`: Ping/Pong による死活監視と自動切断（`ClientTimedOutEvent`）。
+- `RateLimitPlugin`: メッセージ送信レート制限（Drop / Throttle / Disconnect）。
+- `PresencePlugin`: クライアントのプレゼンス状態管理（Online / Away / Busy）。
+- `SnapshotPlugin`: ECS コンポーネントの定期スナップショット送信（差分モード対応）。
+- `LobbyPlugin`: マッチメイキング用ロビー機能（`LobbyReadyEvent`）。
+- `ChatCorePlugin`: ニックネーム設定とグローバルブロードキャスト。
+- `ChatRoomPlugin`: ルームへの参加・退出およびルーム一覧機能（`ChatCorePlugin` と併用）。
+- `ChatFullPlugin`: チャット関連機能をすべて統合したオールインワンプラグイン。
+- `Spatial2DPlugin`: 2D 空間の位置管理および AOI（Area of Interest）通知。
+- `Spatial3DFlatPlugin`: 地上ベースの 3D 空間向け AOI 通知（RPG・MOBA など）。
+- `Spatial3DPlugin`: フル 3D 空間向け AOI 通知（宇宙・フライトシミュレーターなど）。
 
 #### サンプル
 
-- `examples/echo.rs` — 接続クライアントへのエコーサーバー
-- `examples/broadcast_chat.rs` — 全クライアントへのブロードキャストチャット
-- `examples/room_chat.rs` — ルーム分割チャット
+- `examples/echo.rs`: 接続クライアントへのエコーサーバー。
+- `examples/broadcast_chat.rs`: 全クライアントへのブロードキャストチャット。
+- `examples/room_chat.rs`: ルームベースのチャット。
 
 #### ドキュメント
 
-- [チュートリアル](https://hino-rs.github.io/ecson/)
-- [ECS解説](https://github.com/hino-rs/ecson/tree/main/docs/ECS.md)
-- [CONTRIBUTING.md](./CONTRIBUTING.md)
+- [公式ドキュメント](https://ecson.netlify.app/)
 
 ---
 
-> ⚠️ **本バージョンは実験段階です。** 本番環境での使用は推奨しません。APIは予告なく変更される場合があります。
+> ⚠️ **このバージョンは実験的なリリースです。** 本番環境での使用は推奨しません。API は予告なく変更される場合があります。
 
+[0.1.1]: https://github.com/hino-rs/ecson/releases/tag/v0.1.1
 [0.1.0]: https://github.com/hino-rs/ecson/releases/tag/v0.1.0

@@ -240,7 +240,7 @@ impl EcsonApp {
         }
     }
 
-    /// UpdateとFixedUpdateを1回分実行します
+    /// UpdateとFixedUpdateを1回実行します
     pub fn tick_once(&mut self) {
         if let Some(update_schedule) = self.schedules.get_mut(Update) {
             update_schedule.run(&mut self.world);
@@ -250,7 +250,7 @@ impl EcsonApp {
         }
     }
 
-    /// UpdateとFixedUpdateをn回分実行します
+    /// UpdateとFixedUpdateをn回実行します
     pub fn tick_n(&mut self, n: u128) {
         // サーバーのコンフィグを取得
         let config = self
