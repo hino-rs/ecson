@@ -13,6 +13,7 @@ use bevy_ecs::{
     world::World,
 };
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 use tracing::{info, warn};
 
@@ -31,6 +32,10 @@ pub struct Update;
 /// 固定時間ごとに実行されるスケジュール (ゲームロジックや状態動機など)
 #[derive(ScheduleLabel, Clone, Debug, PartialEq, Eq, Hash)]
 pub struct FixedUpdate;
+
+/// サーバー終了直前に1回だけ実行されるスケジュール
+#[derive(ScheduleLabel, Clone, Debug, PartialEq, Eq, Hash)]
+pub struct Shutdown;
 
 // ============================================================================
 // Tokio ランタイムリソース
@@ -62,6 +67,22 @@ impl TokioRuntime {
     }
 }
 
+/// ループ終了フラグ
+#[derive(Resource, Clone, Default)]
+pub struct ShutdownFlag(pub Arc<AtomicBool>);
+
+impl ShutdownFlag {
+    pub fn new() -> Self {
+        Self(Arc::new(AtomicBool::new(false)))
+    }
+    pub fn request(&self) {
+        self.0.store(true, Ordering::SeqCst);
+    }
+    pub fn is_requested(&self) -> bool {
+        self.0.load(Ordering::SeqCst)
+    }
+}
+
 // ============================================================================
 // アプリケーションコア
 // ============================================================================
@@ -80,6 +101,7 @@ impl Default for EcsonApp {
     fn default() -> Self {
         let mut world = World::new();
         world.insert_resource(ServerTimeConfig::default());
+        world.insert_resource(ShutdownFlag::new());
 
         // Tokio ランタイムをここで1つだけ生成し、World に登録する。
         // 以降、全ネットワークプラグインはこのリソースを共有する。
@@ -93,6 +115,7 @@ impl Default for EcsonApp {
         schedules.insert(Schedule::new(Startup));
         schedules.insert(Schedule::new(Update));
         schedules.insert(Schedule::new(FixedUpdate));
+        schedules.insert(Schedule::new(Shutdown));
 
         EcsonApp { world, schedules }
     }
@@ -115,6 +138,33 @@ impl EcsonApp {
             startup_schedule.run(&mut self.world);
         }
 
+        let flag = self.world.get_resource::<ShutdownFlag>().unwrap().clone();
+
+        let flag1 = flag.clone();
+
+        let rt = self.world.get_resource::<TokioRuntime>().unwrap().clone();
+
+        rt.spawn(async move {
+            tokio::signal::ctrl_c()
+                .await
+                .expect("failed to listen for ctrl_c");
+            info!("Shutdown signal received.");
+            flag1.request();
+        });
+
+        #[cfg(unix)]
+        {
+            let flag2 = flag.clone();
+            rt.spawn(async move {
+                let mut sig =
+                    tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())
+                        .unwrap();
+                sig.recv().await;
+                info!("SIGTERM received");
+                flag2.request();
+            });
+        }
+
         // サーバーのコンフィグを取得
         let config = self
             .world
@@ -132,7 +182,7 @@ impl EcsonApp {
         // =========================================================
         // メインループ（Update は毎フレーム高速回転）
         // =========================================================
-        loop {
+        while !flag.is_requested() {
             let current_time = Instant::now();
             let delta_time = current_time.duration_since(previous_time);
             previous_time = current_time;
@@ -176,6 +226,11 @@ impl EcsonApp {
             // -----------------------------------------------------
             std::thread::sleep(update_sleep);
         }
+        info!("Running Shutdown schedule...");
+        if let Some(shutdown_schedule) = self.schedules.get_mut(Shutdown) {
+            shutdown_schedule.run(&mut self.world);
+        }
+        info!("EcsonApp stopped gracefully.");
     }
 
     /// エラーハンドラを設定します。
@@ -231,6 +286,11 @@ impl EcsonApp {
             .add_systems(systems);
 
         self
+    }
+
+    /// システム内から呼べるシャットダウン要求ヘルパー
+    pub fn request_shutdown(flag: Res<ShutdownFlag>) {
+        flag.request();
     }
 
     /// Startupを1回実行します
