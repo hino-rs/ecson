@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.2.0] - 2026-04-06
+
+Major lifecycle improvements
+
+### Added
+
+#### Core Framework
+
+- `Shutdown` schedule that runs once when the server shuts down
+- `ShutdownFlag` to determine when the lifecycle is ending
+
+#### Built-in Plugins
+
+- `Plugin::cleanup` for cleanup processing during shutdown
+- Changed the signature of `Plugin::build` from `self` to `&self`
+- Changed `EcsonApp` to store plugins as `Vec<Box<dyn Plugin>>`
+- After the main loop ends and before the `Shutdown` schedule runs, `cleanup` is now called for all plugins
+
+---
+
 ## [0.1.1] - 2026-04-06
 
 ### Added
