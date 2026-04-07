@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.2.1]
+
+Tighten public API surface of the facade crate
+
+### Added
+
+#### Core Framework
+
+- `Plugins` and `PluginsState` are now exported from `ecson::prelude`
+- `Shutdown` and `ShutdownFlag` are now exported from `ecson::prelude`
+  (they were added in v0.2.0 but missing from the prelude)
+
+### Changed
+
+#### Core Framework
+
+- `ecson/src/lib.rs`: removed bare `pub use` of internal crates
+  (`ecson_core`, `ecson_ecs`, `ecson_network`) to prevent implementation
+  details from leaking into the public API
+- `bevy_ecs` re-export is now marked `#[doc(hidden)]` — it remains
+  accessible for advanced use cases but no longer appears in public docs
+- Added crate-level doc comments for the docs.rs landing page
+
+---
+
 ## [0.2.0] - 2026-04-06
 
 Major lifecycle improvements
