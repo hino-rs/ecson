@@ -1,6 +1,6 @@
 [package]
 name = "ecson"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2024"
 license = "MIT"
 repository = "https://github.com/hino-rs/ecson"
@@ -11,9 +11,9 @@ description = "ECS-driven stateful bidirectional server framework for Rust"
 rust-version = "1.85"
 
 [dependencies]
-ecson_core = { path = "../crates/ecson_core", version = "0.2.0" }
-ecson_ecs = { path = "../crates/ecson_ecs", version = "0.2.0" }
-ecson_network = { path = "../crates/ecson_network", version = "0.2.0" }
+ecson_core = { path = "../crates/ecson_core", version = "0.2.1" }
+ecson_ecs = { path = "../crates/ecson_ecs", version = "0.2.1" }
+ecson_network = { path = "../crates/ecson_network", version = "0.2.1" }
 bevy_ecs = "0.18.1"
 
 [dev-dependencies]
