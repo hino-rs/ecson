@@ -19,6 +19,13 @@
 /// `use ecson::plugins::chat::ChatFullPlugin;` のようにアクセスします。
 pub use ecson_ecs::plugins;
 
+// ecson_macros の生成コードが `::ecson::bevy_ecs::...` で参照できるようにする
+#[doc(hidden)]
+pub use bevy_ecs;
+
+// `#[ecson::component]` 等の絶対パス構文を使えるようにクレートルートに公開
+pub use ecson_macros::{component, message, resource};
+
 // ── prelude ─────────────────────────────────────────────────────────────────
 /// `ecson::prelude::*` で一括 import できる公開 API セット。
 ///

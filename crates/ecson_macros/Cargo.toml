@@ -1,6 +1,6 @@
 [package]
 name = "ecson_macros"
-version = "0.2.3"
+version = "0.2.4"
 edition = "2024"
 license = "MIT"
 repository = "https://github.com/hino-rs/ecson"
@@ -12,7 +12,6 @@ categories = ["network-programming", "asynchronous"]
 proc-macro = true
 
 [dependencies]
-bevy_ecs = "0.18.1"
 proc-macro2 = "1.0.106"
 quote = "1.0.45"
 syn = { version = "2.0.117", features = ["full"] }

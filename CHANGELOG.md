@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.2.4] - 2026-04-08
+
+### Fixed
+
+#### Macros
+
+- `#[component]`、`#[resource]`、`#[message]` がユーザーの crate に `bevy_ecs` 直接依存なしで動作するよう修正
+  - `bevy_ecs` の derive macro はコンパイル後の生成コードに `::bevy_ecs::...` をハードコードするため、ユーザーが `bevy_ecs` を直接依存に持たない場合にコンパイルエラーになっていた
+  - `ecson_macros` 側で impl を手動生成し、生成コードのパスをすべて `::ecson::bevy_ecs::...` 経由に変更
+  - `ecson` が `#[doc(hidden)]` で `bevy_ecs` を再エクスポートすることで上記パスを解決可能に
+
+#### ecson crate
+
+- `#[ecson::component]` / `#[ecson::resource]` / `#[ecson::message]` の絶対パス構文に対応
+  - `pub use ecson_macros::{component, resource, message};` をクレートルートに追加
+
+---
+
 ## [0.2.3] - 2026-04-08
 
 ### Fixed
