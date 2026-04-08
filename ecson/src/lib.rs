@@ -14,13 +14,6 @@
 //! use ecson::plugins::chat::ChatFullPlugin;
 //! ```
 
-// ── 内部クレートの再エクスポート ────────────────────────────────────────────
-// `bevy_ecs` はユーザーが直接触る必要がある高度なユースケース（カスタム System など）
-// のために公開するが、`#[doc(hidden)]` で通常ドキュメントには現れないようにする。
-// 内部クレートは原則非公開とし、`prelude` / `plugins` 経由でのみ使う。
-#[doc(hidden)]
-pub use bevy_ecs;
-
 /// ビルトインプラグイン群。
 ///
 /// `use ecson::plugins::chat::ChatFullPlugin;` のようにアクセスします。
@@ -31,10 +24,8 @@ pub use ecson_ecs::plugins;
 ///
 /// ユーザーコードでは通常このモジュールだけを使います。
 pub mod prelude {
-    // --- ネットワーク / ECS メッセージング ---
-    pub use bevy_ecs::event::Event;
-    pub use bevy_ecs::message::{MessageReader, MessageWriter, Messages};
-    pub use bevy_ecs::prelude::*;
+    // --- bevy_ecsラッパー ---
+    pub use ecson_ecs::types::*;
 
     // --- アプリケーション & スケジュール ---
     pub use ecson_core::app::{EcsonApp, FixedUpdate, Shutdown, Startup, Update};
@@ -59,4 +50,7 @@ pub mod prelude {
 
     // --- ネットワークプラグイン ---
     pub use ecson_network::plugin::*;
+
+    // --- マクロ ---
+    pub use ecson_macros::*;
 }

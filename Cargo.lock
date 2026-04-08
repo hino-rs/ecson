@@ -551,6 +551,7 @@ dependencies = [
  "bevy_ecs",
  "ecson_core",
  "ecson_ecs",
+ "ecson_macros",
  "ecson_network",
  "tracing",
  "tracing-subscriber",
@@ -578,6 +579,11 @@ dependencies = [
 [[package]]
 name = "ecson_macros"
 version = "0.2.1"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
 
 [[package]]
 name = "ecson_network"
