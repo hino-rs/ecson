@@ -546,7 +546,7 @@ checksum = "92773504d58c093f6de2459af4af33faa518c13451eb8f2b5698ed3d36e7c813"
 
 [[package]]
 name = "ecson"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "bevy_ecs",
  "ecson_core",
@@ -559,7 +559,7 @@ dependencies = [
 
 [[package]]
 name = "ecson_core"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "bevy_ecs",
  "tokio",
@@ -568,7 +568,7 @@ dependencies = [
 
 [[package]]
 name = "ecson_ecs"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "bevy_ecs",
  "ecson_core",
@@ -578,7 +578,7 @@ dependencies = [
 
 [[package]]
 name = "ecson_macros"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -587,7 +587,7 @@ dependencies = [
 
 [[package]]
 name = "ecson_network"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "bevy_ecs",
  "ecson_core",
