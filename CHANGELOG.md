@@ -13,31 +13,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 #### Macros
 
-- `#[component]`、`#[resource]`、`#[message]` がユーザーの crate に `bevy_ecs` 直接依存なしで動作するよう修正
-  - `bevy_ecs` の derive macro はコンパイル後の生成コードに `::bevy_ecs::...` をハードコードするため、ユーザーが `bevy_ecs` を直接依存に持たない場合にコンパイルエラーになっていた
-  - `ecson_macros` 側で impl を手動生成し、生成コードのパスをすべて `::ecson::bevy_ecs::...` 経由に変更
-  - `ecson` が `#[doc(hidden)]` で `bevy_ecs` を再エクスポートすることで上記パスを解決可能に
+- Fixed an issue where `#[component]`, `#[resource]`, and `#[message]` would cause compilation errors in a user's crate when `bevy_ecs` was not directly depended upon
+  - The derive macros in `bevy_ecs` hardcode `::bevy_ecs::...` in their generated code, which caused compilation errors when users didn't directly depend on `bevy_ecs`
+  - Modified `ecson_macros` to manually generate the impls and change all generated code paths to use `::ecson::bevy_ecs::...` instead
+  - By having `ecson` re-export `bevy_ecs` with `#[doc(hidden)]`, it resolved the above path resolution issue
 
 #### ecson crate
 
-- `#[ecson::component]` / `#[ecson::resource]` / `#[ecson::message]` の絶対パス構文に対応
-  - `pub use ecson_macros::{component, resource, message};` をクレートルートに追加
+- Supports absolute path syntax for `#[ecson::component]` / `#[ecson::resource]` / `#[ecson::message]`
+  - Add `pub use ecson_macros::{component, resource, message};` to the crate root
 
 ---
 
 ## [0.2.3] - 2026-04-08
 
-### Fixed
+**Unnecessary update**
 
-#### Macros
+## [0.2.2] - 2026-04-08
 
-- `#[component]`, `#[resource]`, `#[message]` が実際に動作するよう修正
-  - 生成コードが `::ecson::bevy_ecs` を参照しており、`ecson` が `bevy_ecs` を公開していないため展開に失敗していた問題を修正
-  - `ecson_macros` に `bevy_ecs` を直接依存追加し、`::bevy_ecs` の絶対パスで参照するよう変更
+**Unnecessary update**
 
 ---
 
-## [0.2.1]
+## [0.2.1] - 2026-04-07
 
 Tighten public API surface of the facade crate
 

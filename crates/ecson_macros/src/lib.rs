@@ -5,7 +5,6 @@ use syn::{parse_macro_input, parse_quote, DeriveInput};
 /// `#[ecson::component]` または `#[component]` (use ecson::prelude::* 後) で
 /// `bevy_ecs::component::Component` を実装します。
 ///
-/// ユーザーの Cargo.toml に `bevy_ecs` を追加する必要はありません。
 ///
 /// # 例
 /// ```rust

@@ -21,15 +21,17 @@ pub struct NetworkReceiver(pub mpsc::Receiver<NetworkEvent>);
 pub fn receive_network_messages_system(
     mut commands: Commands,
     mut ecs_rx: ResMut<NetworkReceiver>,
-    mut ev_msg: MessageWriter<MessageReceived>,
-    mut ev_disconnect: MessageWriter<UserDisconnected>,
     mut connection_map: ResMut<ConnectionMap>,
+    mut ev_msg: MessageWriter<MessageReceived>,
+    mut ev_connected: MessageWriter<UserConnected>,
+    mut ev_disconnect: MessageWriter<UserDisconnected>,
 ) {
     while let Ok(event) = ecs_rx.0.try_recv() {
         match event {
             NetworkEvent::Connected { id, sender } => {
                 let entity = commands.spawn((ClientId(id), ClientSender(sender))).id();
                 connection_map.0.insert(id, entity);
+                ev_connected.write(UserConnected { entity, client_id: id });
                 info!("ECS: 新規接続 {id} -> Entity {entity:?}");
             }
             NetworkEvent::Message { id, payload } => {
