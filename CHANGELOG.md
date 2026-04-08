@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.2.3] - 2026-04-08
+
+### Fixed
+
+#### Macros
+
+- `#[component]`, `#[resource]`, `#[message]` が実際に動作するよう修正
+  - 生成コードが `::ecson::bevy_ecs` を参照しており、`ecson` が `bevy_ecs` を公開していないため展開に失敗していた問題を修正
+  - `ecson_macros` に `bevy_ecs` を直接依存追加し、`::bevy_ecs` の絶対パスで参照するよう変更
+
+---
+
 ## [0.2.1]
 
 Tighten public API surface of the facade crate

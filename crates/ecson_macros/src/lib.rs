@@ -5,9 +5,7 @@ use quote::quote;
 pub fn component(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let item: proc_macro2::TokenStream = item.into();
     quote! {
-        // bevy_ecs をスコープに引き込み、derive が生成するパスを解決させる
-        use ::ecson::bevy_ecs as bevy_ecs;
-        #[derive(bevy_ecs::prelude::Component)]
+        #[derive(::bevy_ecs::prelude::Component)]
         #item
     }
     .into()
@@ -17,8 +15,7 @@ pub fn component(_attr: TokenStream, item: TokenStream) -> TokenStream {
 pub fn resource(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let item: proc_macro2::TokenStream = item.into();
     quote! {
-        use ::ecson::bevy_ecs as bevy_ecs;
-        #[derive(bevy_ecs::prelude::Resource)]
+        #[derive(::bevy_ecs::prelude::Resource)]
         #item
     }
     .into()
@@ -28,8 +25,7 @@ pub fn resource(_attr: TokenStream, item: TokenStream) -> TokenStream {
 pub fn message(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let item: proc_macro2::TokenStream = item.into();
     quote! {
-        use ::ecson::bevy_ecs as bevy_ecs;
-        #[derive(bevy_ecs::prelude::Message)]
+        #[derive(::bevy_ecs::prelude::Message)]
         #item
     }
     .into()
