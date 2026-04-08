@@ -2,13 +2,10 @@
 
 use crate::ws_connection;
 use ecson_ecs::channels::NetworkEvent;
-use std::sync::atomic::{AtomicU64, Ordering};
 use tokio::net::TcpListener;
 use tokio::sync::mpsc;
 use tokio_rustls::TlsAcceptor;
 use tracing::{info, warn};
-
-static NEXT_CONNECTION_ID: AtomicU64 = AtomicU64::new(1);
 
 pub async fn run(
     addr: &str,
@@ -20,7 +17,7 @@ pub async fn run(
     info!("WebSocket(TLS) server listening on wss://{addr}");
 
     while let Ok((tcp_stream, peer_addr)) = listener.accept().await {
-        let conn_id = NEXT_CONNECTION_ID.fetch_add(1, Ordering::Relaxed);
+        let conn_id = rand::random::<u64>();
         let acceptor = acceptor.clone();
         let ecs_tx = ecs_tx.clone();
 

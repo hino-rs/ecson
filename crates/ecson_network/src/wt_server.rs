@@ -2,12 +2,9 @@
 
 use crate::wt_connection;
 use ecson_ecs::channels::NetworkEvent;
-use std::sync::atomic::{AtomicU64, Ordering};
 use tokio::sync::mpsc;
 use tracing::{error, info};
 use wtransport::{Endpoint, Identity, ServerConfig};
-
-static NEXT_CONNECTION_ID: AtomicU64 = AtomicU64::new(1);
 
 pub async fn run(
     addr: &str,
@@ -33,7 +30,7 @@ pub async fn run(
 
     loop {
         let incoming_session = endpoint.accept().await;
-        let conn_id = NEXT_CONNECTION_ID.fetch_add(1, Ordering::Relaxed);
+        let conn_id = rand::random::<u64>();
         let ecs_tx_clone = ecs_tx.clone();
 
         tokio::spawn(async move {

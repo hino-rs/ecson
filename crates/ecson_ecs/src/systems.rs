@@ -11,6 +11,7 @@ use bevy_ecs::{
     system::{Commands, Query, ResMut},
 };
 use tokio::sync::mpsc;
+use tracing::warn;
 use tracing::{error, info};
 
 /// Tokio側から送られてくるネットワークイベントを受信するためのリソースラッパー。
@@ -29,9 +30,16 @@ pub fn receive_network_messages_system(
     while let Ok(event) = ecs_rx.0.try_recv() {
         match event {
             NetworkEvent::Connected { id, sender } => {
+                if connection_map.0.contains_key(&id) {
+                    warn!("conn_id collision: {id}, dropping");
+                    return;
+                }
                 let entity = commands.spawn((ClientId(id), ClientSender(sender))).id();
                 connection_map.0.insert(id, entity);
-                ev_connected.write(UserConnected { entity, client_id: id });
+                ev_connected.write(UserConnected {
+                    entity,
+                    client_id: id,
+                });
                 info!("ECS: 新規接続 {id} -> Entity {entity:?}");
             }
             NetworkEvent::Message { id, payload } => {

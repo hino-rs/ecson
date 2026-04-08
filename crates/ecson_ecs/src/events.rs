@@ -1,8 +1,8 @@
 //! クライアントとの通信や、システム間でやり取りされるイベント（Message）を定義します。
 
 use crate::channels::NetworkPayload;
-use bevy_ecs::message::Message;
 use bevy_ecs::entity::Entity;
+use bevy_ecs::message::Message;
 
 // =====================================================
 // メッセージ送受信

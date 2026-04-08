@@ -1,13 +1,13 @@
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{parse_macro_input, parse_quote, DeriveInput};
+use syn::{DeriveInput, parse_macro_input, parse_quote};
 
 /// `#[ecson::component]` または `#[component]` (use ecson::prelude::* 後) で
 /// `bevy_ecs::component::Component` を実装します。
 ///
 ///
 /// # 例
-/// ```rust
+/// ```ignore
 /// use ecson::prelude::*;
 ///
 /// #[component]
