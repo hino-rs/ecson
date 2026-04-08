@@ -1,4 +1,4 @@
-# Ecson
+# Ecson v0.2.4
 
 [日本語](https://github.com/hino-rs/ecson/blob/main/README.ja.md)
 
@@ -175,7 +175,7 @@ ecson/
 │   ├── ecson_core/     ← EcsonApp, Plugin trait, schedule labels
 │   ├── ecson_ecs/      ← ECS types, built-in plugins
 │   ├── ecson_network/  ← WebSocket, WebTransport, TLS
-│   └── ecson_macros/   ← derive macros (future use)
+│   └── ecson_macros/   ← derive macros
 └── ecson/              ← Public facade crate (re-exports everything)
     └── examples/
 ```

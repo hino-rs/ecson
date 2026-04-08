@@ -69,6 +69,7 @@ pub fn receive_network_messages_system(
 pub fn flush_outbound_messages_system(
     mut outbound_messages: MessageReader<SendMessage>,
     query: Query<&ClientSender>,
+    mut ev_failed: MessageWriter<MessageSendFailed>,
 ) {
     for outbound in outbound_messages.read() {
         if let Ok(sender) = query.get(outbound.target) {
@@ -77,12 +78,20 @@ pub fn flush_outbound_messages_system(
                     "Failed to send message to Entity {:?}: {e}",
                     outbound.target
                 );
+                ev_failed.write(MessageSendFailed {
+                    entity: outbound.target,
+                    reason: SendFailReason::ChannelError(e.to_string()),
+                });
             }
         } else {
             error!(
                 "Destination Entity {:?} does not exist anymore",
                 outbound.target
             );
+            ev_failed.write(MessageSendFailed {
+                entity: outbound.target,
+                reason: SendFailReason::EntityNotFound,
+            });
         }
     }
 }

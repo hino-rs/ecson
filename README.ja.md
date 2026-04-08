@@ -1,4 +1,4 @@
-# Ecson
+# Ecson v0.2.4
 
 [English](https://github.com/hino-rs/ecson/blob/main/README.md)
 
@@ -175,7 +175,7 @@ ecson/
 │   ├── ecson_core/     ← EcsonApp, Plugin, スケジュールラベル
 │   ├── ecson_ecs/      ← ECS型, 組み込みプラグイン
 │   ├── ecson_network/  ← WebSocket, WebTransport, TLS
-│   └── ecson_macros/   ← deriveマクロ（将来用）
+│   └── ecson_macros/   ← deriveマクロ
 └── ecson/              ← 公開ファサードクレート
     └── examples/
 ```

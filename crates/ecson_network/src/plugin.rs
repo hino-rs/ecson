@@ -3,7 +3,7 @@
 use ecson_core::app::{EcsonApp, TokioRuntime, Update};
 use ecson_core::plugin::Plugin;
 use ecson_ecs::channels::NetworkEvent;
-use ecson_ecs::events::{MessageReceived, SendMessage, UserDisconnected};
+use ecson_ecs::events::{MessageReceived, MessageSendFailed, SendMessage, UserDisconnected};
 use ecson_ecs::resources::{ConnectionMap, NetworkSender};
 use ecson_ecs::systems::NetworkReceiver;
 use tokio::sync::mpsc;
@@ -29,6 +29,7 @@ fn setup_network_ecs(app: &mut EcsonApp, ecs_buffer: usize) {
     app.add_event::<MessageReceived>();
     app.add_event::<SendMessage>();
     app.add_event::<UserDisconnected>();
+    app.add_event::<MessageSendFailed>();
 
     app.add_systems(
         Update,

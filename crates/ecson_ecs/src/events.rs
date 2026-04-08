@@ -4,8 +4,17 @@ use crate::channels::NetworkPayload;
 use bevy_ecs::entity::Entity;
 use bevy_ecs::message::Message;
 
+/// メッセージ送信失敗の理由
+#[derive(Debug)]
+pub enum SendFailReason {
+    /// `try_send` がエラーを返した（チャネルが詰まっている、切断済みなど）
+    ChannelError(String),
+    /// 対象エンティティがすでに World に存在しない
+    EntityNotFound,
+}
+
 // =====================================================
-// メッセージ送受信
+// メッセージ送受信・失敗
 // =====================================================
 
 /// サーバーから特定のクライアントへメッセージを送信するためのイベント。
@@ -21,6 +30,13 @@ pub struct MessageReceived {
     pub entity: Entity,
     pub client_id: u64,
     pub payload: NetworkPayload,
+}
+
+/// メッセージの送信に失敗した際に発行されるイベント
+#[derive(Message)]
+pub struct MessageSendFailed {
+    pub entity: Entity,
+    pub reason: SendFailReason,
 }
 
 // =====================================================
