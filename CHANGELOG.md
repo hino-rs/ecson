@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.2.2]
+
+Add proc-macro wrappers for Component, Resource, and Message
+
+---
+
 ## [0.2.1]
 
 Tighten public API surface of the facade crate

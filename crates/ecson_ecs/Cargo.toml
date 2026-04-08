@@ -1,6 +1,6 @@
 [package]
 name = "ecson_ecs"
-version = "0.2.1"
+version = "0.2.2"
 edition = "2024"
 license = "MIT"
 repository = "https://github.com/hino-rs/ecson"
@@ -9,7 +9,7 @@ keywords = ["gameserver", "ecs", "realtime"]
 categories = ["network-programming", "asynchronous"]
 
 [dependencies]
-ecson_core = { path = "../ecson_core", version = "0.2.1" }
+ecson_core = { path = "../ecson_core", version = "0.2.2" }
 bevy_ecs = "0.18.1"
 tokio = { version = "1.50.0", features = ["full"] }
 tracing = "0.1.44"
