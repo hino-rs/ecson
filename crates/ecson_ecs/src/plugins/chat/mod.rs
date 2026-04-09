@@ -50,8 +50,8 @@ pub struct ChatFullPlugin;
 impl Plugin for ChatFullPlugin {
     fn build(&self, app: &mut EcsonApp) {
         // リソースの初期化
-        if !app.world.contains_resource::<RoomMap>() {
-            app.world.insert_resource(RoomMap::default());
+        if !app.contains_resource::<RoomMap>() {
+            app.insert_resource(RoomMap::default());
         }
 
         // 内部イベントとフックイベントの登録
@@ -110,8 +110,8 @@ pub struct ChatRoomPlugin;
 impl Plugin for ChatRoomPlugin {
     fn build(&self, app: &mut EcsonApp) {
         // ルーム機能が追加された時だけ、RoomMapリソースが作られる
-        if !app.world.contains_resource::<RoomMap>() {
-            app.world.insert_resource(RoomMap::default());
+        if !app.contains_resource::<RoomMap>() {
+            app.insert_resource(RoomMap::default());
         }
         app.add_event::<UserJoinedRoomEvent>();
 

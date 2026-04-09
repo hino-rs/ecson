@@ -92,10 +92,11 @@ impl ShutdownFlag {
 #[must_use]
 pub struct EcsonApp {
     /// 全てのエンティティ、コンポーネント、リソースを保持するECSワールド。
-    pub world: World,
+    world: World,
     /// システムが登録され、実行されるスケジュール方式。
-    pub schedules: Schedules,
-    pub plugins: Vec<Box<dyn Plugin>>,
+    pub(crate) schedules: Schedules,
+    /// 登録したプラグイン
+    pub(crate) plugins: Vec<Box<dyn Plugin>>,
 }
 
 impl Default for EcsonApp {
@@ -249,9 +250,21 @@ impl EcsonApp {
     }
 
     /// `World` にリソースを追加します。
+    /// `World.insert_resource`のラッパー
     pub fn insert_resource<R: Resource>(&mut self, resource: R) -> &mut Self {
         self.world.insert_resource(resource);
         self
+    }
+
+    /// `World` に指定のリソースが入っているか確認できます。
+    /// `World.contains_resource`のラッパー
+    pub fn contains_resource<R: Resource>(&mut self) -> bool {
+        self.world.contains_resource::<R>()
+    }
+
+    /// `World.get_resource`のラッパー
+    pub fn get_resource<R: Resource>(&self) -> Option<&R> {
+        self.world.get_resource::<R>()
     }
 
     /// イベント（Message）を処理するためのリソースと更新システムを登録します。

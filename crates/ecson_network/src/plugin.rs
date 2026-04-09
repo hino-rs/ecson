@@ -17,15 +17,15 @@ const DEFAULT_CLIENT_BUFFER: usize = 100;
 /// 同一の World に対して複数のネットワークプラグインが `build` を呼んでも、
 /// `ConnectionMap` の存在チェックにより二重登録を防ぐ。
 fn setup_network_ecs(app: &mut EcsonApp, ecs_buffer: usize) {
-    if app.world.contains_resource::<ConnectionMap>() {
+    if app.contains_resource::<ConnectionMap>() {
         return;
     }
 
     let (ecs_tx, ecs_rx) = mpsc::channel::<NetworkEvent>(ecs_buffer);
-    app.world.insert_resource(NetworkSender(ecs_tx));
-    app.world.insert_resource(NetworkReceiver(ecs_rx));
+    app.insert_resource(NetworkSender(ecs_tx));
+    app.insert_resource(NetworkReceiver(ecs_rx));
 
-    app.world.insert_resource(ConnectionMap::default());
+    app.insert_resource(ConnectionMap::default());
     app.add_event::<MessageReceived>();
     app.add_event::<SendMessage>();
     app.add_event::<UserDisconnected>();
@@ -46,8 +46,7 @@ fn setup_network_ecs(app: &mut EcsonApp, ecs_buffer: usize) {
 /// `TokioRuntime` が World に存在しない場合（= `EcsonApp::new()` を経由せずに
 /// `EcsonApp` を構築した場合）パニックする。
 fn get_runtime(app: &EcsonApp) -> TokioRuntime {
-    app.world
-        .get_resource::<TokioRuntime>()
+    app.get_resource::<TokioRuntime>()
         .expect("TokioRuntime が World に見つかりません。EcsonApp::new() で初期化してください。")
         .clone()
 }
@@ -86,7 +85,7 @@ impl Plugin for EcsonWebSocketPlugin {
     fn build(&self, app: &mut EcsonApp) {
         setup_network_ecs(app, self.ecs_buffer);
 
-        let ecs_tx = app.world.get_resource::<NetworkSender>().unwrap().0.clone();
+        let ecs_tx = app.get_resource::<NetworkSender>().unwrap().0.clone();
         let addr = self.address.clone();
         let client_buffer = self.client_buffer;
 
@@ -142,7 +141,7 @@ impl Plugin for EcsonWebSocketTlsPlugin {
     fn build(&self, app: &mut EcsonApp) {
         setup_network_ecs(app, self.ecs_buffer);
 
-        let ecs_tx = app.world.get_resource::<NetworkSender>().unwrap().0.clone();
+        let ecs_tx = app.get_resource::<NetworkSender>().unwrap().0.clone();
         let addr = self.address.clone();
         let client_buffer = self.client_buffer;
 
@@ -192,7 +191,7 @@ impl Plugin for EcsonWebSocketTlsDevPlugin {
     fn build(&self, app: &mut EcsonApp) {
         setup_network_ecs(app, self.ecs_buffer);
 
-        let ecs_tx = app.world.get_resource::<NetworkSender>().unwrap().0.clone();
+        let ecs_tx = app.get_resource::<NetworkSender>().unwrap().0.clone();
         let addr = self.address.clone();
         let client_buffer = self.client_buffer;
 
@@ -244,7 +243,7 @@ impl Plugin for EcsonWebTransportDevPlugin {
     fn build(&self, app: &mut EcsonApp) {
         setup_network_ecs(app, self.ecs_buffer);
 
-        let ecs_tx = app.world.get_resource::<NetworkSender>().unwrap().0.clone();
+        let ecs_tx = app.get_resource::<NetworkSender>().unwrap().0.clone();
         let addr = self.address.clone();
         let client_buffer = self.client_buffer;
 

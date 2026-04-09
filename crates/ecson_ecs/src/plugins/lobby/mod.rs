@@ -113,12 +113,12 @@ impl LobbyPlugin {
 impl Plugin for LobbyPlugin {
     fn build(&self, app: &mut EcsonApp) {
         // LobbyConfig（新規）
-        app.world.insert_resource(LobbyConfig {
+        app.insert_resource(LobbyConfig {
             default_max_members: self.default_max_members,
         });
 
-        if !app.world.contains_resource::<LobbyMap>() {
-            app.world.insert_resource(LobbyMap::default());
+        if !app.contains_resource::<LobbyMap>() {
+            app.insert_resource(LobbyMap::default());
         }
 
         // イベント登録（変更なし）

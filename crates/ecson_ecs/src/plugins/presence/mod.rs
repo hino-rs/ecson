@@ -58,8 +58,8 @@ pub struct PresencePlugin;
 
 impl Plugin for PresencePlugin {
     fn build(&self, app: &mut EcsonApp) {
-        if !app.world.contains_resource::<PresenceMap>() {
-            app.world.insert_resource(PresenceMap::default());
+        if !app.contains_resource::<PresenceMap>() {
+            app.insert_resource(PresenceMap::default());
         }
 
         app.add_event::<PresenceChangedEvent>();

@@ -110,11 +110,11 @@ impl SnapshotPlugin {
 
 impl Plugin for SnapshotPlugin {
     fn build(&self, app: &mut EcsonApp) {
-        app.world.insert_resource(SnapshotConfig {
+        app.insert_resource(SnapshotConfig {
             interval_secs: self.interval_secs,
             delta_only: self.delta_only,
         });
-        app.world.insert_resource(SnapshotState::default());
+        app.insert_resource(SnapshotState::default());
 
         app.add_event::<SnapshotSentEvent>();
 
