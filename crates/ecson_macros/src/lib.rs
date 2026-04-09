@@ -7,7 +7,7 @@ use syn::{DeriveInput, parse_macro_input, parse_quote};
 ///
 ///
 /// # 例
-/// ```ignore
+/// ```rust, ignore
 /// use ecson::prelude::*;
 ///
 /// #[component]
@@ -38,6 +38,14 @@ pub fn component(_attr: TokenStream, item: TokenStream) -> TokenStream {
 
 /// `#[ecson::resource]` または `#[resource]` (use ecson::prelude::* 後) で
 /// `bevy_ecs::system::Resource` を実装します。
+///
+/// # 例
+/// ```ignore
+/// use ecson::prelude::*;
+///
+/// #[resource]
+/// struct PlayerCount(u32);
+/// ```
 #[proc_macro_attribute]
 pub fn resource(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let input = parse_macro_input!(item as DeriveInput);
@@ -59,6 +67,14 @@ pub fn resource(_attr: TokenStream, item: TokenStream) -> TokenStream {
 
 /// `#[ecson::message]` または `#[message]` (use ecson::prelude::* 後) で
 /// `bevy_ecs::message::Message` を実装します。
+///
+/// # 例
+/// ```ignore
+/// use ecson::prelude::*;
+///
+/// #[message]
+/// struct ChatMessage { content: String }
+/// ```
 #[proc_macro_attribute]
 pub fn message(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let input = parse_macro_input!(item as DeriveInput);

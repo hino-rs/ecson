@@ -197,7 +197,11 @@ ecson/
 
 ## ドキュメント
 
-[https://ecson.netlify.app/](https://ecson.netlify.app/)
+- [https://ecson.netlify.app/](https://ecson.netlify.app/)
+
+## 記事
+
+- [Rust向けのECS駆動な双方向通信サーバーフレームワークをリリースしました(Ecson)](https://zenn.dev/hino_rs/articles/73f711641e34df)
 
 ---
 

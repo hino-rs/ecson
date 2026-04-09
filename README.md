@@ -197,7 +197,11 @@ Users should only depend on the `ecson` crate. Internal crates are not intended 
 
 ## Documentation
 
-[https://ecson.netlify.app/](https://ecson.netlify.app/)
+- [Official Docs](https://ecson.netlify.app/)
+
+## Articles
+
+- [Rust向けのECS駆動な双方向通信サーバーフレームワークをリリースしました(Ecson)](https://zenn.dev/hino_rs/articles/73f711641e34df)
 
 ---
 
