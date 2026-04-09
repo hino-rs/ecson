@@ -97,6 +97,8 @@ pub struct EcsonApp {
     pub(crate) schedules: Schedules,
     /// 登録したプラグイン
     pub(crate) plugins: Vec<Box<dyn Plugin>>,
+    /// プラグインの状態
+    pub(crate) plugins_state: PluginsState,
 }
 
 impl Default for EcsonApp {
@@ -123,6 +125,7 @@ impl Default for EcsonApp {
             world,
             schedules,
             plugins: Vec::new(),
+            plugins_state: PluginsState::Adding,
         }
     }
 }
@@ -136,6 +139,7 @@ impl EcsonApp {
     /// サーバーのメインループを開始します。
     pub fn run(&mut self) {
         info!("EcsonApp Started🚀");
+        self.plugins_state = PluginsState::Ready;
 
         // =========================================================
         // Startup スケジュールの実行（サーバー起動時に1回だけ）
@@ -232,10 +236,14 @@ impl EcsonApp {
             // -----------------------------------------------------
             std::thread::sleep(update_sleep);
         }
+        self.plugins_state = PluginsState::Finished;
+
         info!("Cleaning up plugins...");
         for plugin in &self.plugins {
             plugin.cleanup(&mut self.world);
         }
+        self.plugins_state = PluginsState::Cleaned;
+
         info!("Running Shutdown schedule...");
         if let Some(shutdown_schedule) = self.schedules.get_mut(Shutdown) {
             shutdown_schedule.run(&mut self.world);
@@ -279,8 +287,8 @@ impl EcsonApp {
 
     /// プラグインの現在の状態を取得します。
     #[inline]
-    pub fn plugins_state(&mut self) -> PluginsState {
-        PluginsState::Ready
+    pub fn plugins_state(&self) -> PluginsState {
+        self.plugins_state
     }
 
     /// プラグインをアプリケーションに追加します。
