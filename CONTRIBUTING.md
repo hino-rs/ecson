@@ -175,7 +175,7 @@ ecson_ecs/src/plugins/
 - **エディション**: `2024`
 - **フォーマット**: `cargo fmt` の出力に従う
 - **lint**: `cargo clippy -- -D warnings` が通ること
-- **コメント**: 公開APIには日本語でdocコメントを書く（`///`）
+- **コメント**: 公開APIには英語でdocコメントを書く（`///`）
 - **エラー処理**: `unwrap()` はプラグインの初期化（起動時の設定ミスは即パニックでよい）以外では避ける
 - **ログ**: `println!` ではなく `tracing::info!` / `tracing::error!` を使う
 
