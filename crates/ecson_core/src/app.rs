@@ -479,6 +479,16 @@ impl EcsonApp {
         self
     }
 
+    /// Returns a shared reference to the ECS `World`.
+    pub fn world(&self) -> &World {
+        &self.world
+    }
+
+    /// Returns an exclusive reference to the ECS `World`.
+    pub fn world_mut(&mut self) -> &mut World {
+        &mut self.world
+    }
+
     /// A shutdown request helper that can be called as an ECS system.
     ///
     /// It receives the [`ShutdownFlag`] as a system parameter and requests a shutdown.

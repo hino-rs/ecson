@@ -11,34 +11,34 @@ pub fn parse_chat_messages_system(
         let NetworkPayload::Text(text) = &msg.payload else {
             continue;
         };
-        let text = text.trim();
+        ev_command.write(parse_command(msg.entity, text.trim()));
+    }
+}
 
-        let command = if let Some(room_name) = text.strip_prefix("/join ") {
-            ChatCommand::JoinRoom {
-                entity: msg.entity,
-                room_name: room_name.trim().to_string(),
-            }
-        } else if let Some(name) = text.strip_prefix("/nick ") {
-            ChatCommand::Nick {
-                entity: msg.entity,
-                name: name.trim().to_string(),
-            }
-        } else if text == "/list" {
-            ChatCommand::ListRooms { entity: msg.entity }
-        } else if text.starts_with('/') {
-            let unknown_cmd = text.split_whitespace().next().unwrap_or(text);
-            ChatCommand::Error {
-                entity: msg.entity,
-                message: format!("Unknown command: {unknown_cmd}"),
-            }
-        } else {
-            ChatCommand::Broadcast {
-                entity: msg.entity,
-                text: text.to_string(),
-            }
-        };
-
-        ev_command.write(command);
+pub(crate) fn parse_command(entity: Entity, text: &str) -> ChatCommand {
+    if let Some(room_name) = text.strip_prefix("/join ") {
+        ChatCommand::JoinRoom {
+            entity,
+            room_name: room_name.trim().to_string(),
+        }
+    } else if let Some(name) = text.strip_prefix("/nick ") {
+        ChatCommand::Nick {
+            entity,
+            name: name.trim().to_string(),
+        }
+    } else if text == "/list" {
+        ChatCommand::ListRooms { entity }
+    } else if text.starts_with('/') {
+        let unknown_cmd = text.split_whitespace().next().unwrap_or(text);
+        ChatCommand::Error {
+            entity,
+            message: format!("Unknown command: {unknown_cmd}"),
+        }
+    } else {
+        ChatCommand::Broadcast {
+            entity,
+            text: text.to_string(),
+        }
     }
 }
 
@@ -236,5 +236,51 @@ pub fn handle_disconnections_system(
                 room_map.0.remove(&room.0);
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use bevy_ecs::prelude::*;
+
+    fn dummy_entity() -> Entity {
+        Entity::from_raw_u32(0).unwrap()
+    }
+
+    #[test]
+    fn parse_nick_command() {
+        let cmd = parse_command(dummy_entity(), "/nick hino");
+        assert!(matches!(cmd, ChatCommand::Nick { name, .. } if name == "hino"));
+    }
+
+    #[test]
+    fn parse_nick_trims_whitespace() {
+        let cmd = parse_command(dummy_entity(), "/nick  hino   ");
+        assert!(matches!(cmd, ChatCommand::Nick { name, .. } if name == "hino"));
+    }
+
+    #[test]
+    fn parse_join_command() {
+        let cmd = parse_command(dummy_entity(), "/join general");
+        assert!(matches!(cmd, ChatCommand::JoinRoom { room_name, .. } if room_name == "general"));
+    }
+
+    #[test]
+    fn parse_list_command() {
+        let cmd = parse_command(dummy_entity(), "/list");
+        assert!(matches!(cmd, ChatCommand::ListRooms { .. }));
+    }
+
+    #[test]
+    fn parse_unknown_slash_command_becomes_error() {
+        let cmd = parse_command(dummy_entity(), "/unknown");
+        assert!(matches!(cmd, ChatCommand::Error { message, .. } if message.contains("/unknown")));
+    }
+
+    #[test]
+    fn parse_plain_text_becomes_broadcast() {
+        let cmd = parse_command(dummy_entity(), "hello everyone");
+        assert!(matches!(cmd, ChatCommand::Broadcast { text, .. } if text == "hello everyone"));
     }
 }
