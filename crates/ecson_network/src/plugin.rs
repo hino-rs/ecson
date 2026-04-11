@@ -1,9 +1,14 @@
 //! ネットワーク系プラグイン（WebSocket / WebTransport）
 
+use std::net::SocketAddr;
+use std::ops::Deref;
+
 use ecson_core::app::{EcsonApp, TokioRuntime, Update};
 use ecson_core::plugin::Plugin;
 use ecson_ecs::channels::NetworkEvent;
-use ecson_ecs::events::{MessageReceived, MessageSendFailed, SendMessage, UserDisconnected};
+use ecson_ecs::events::{
+    MessageReceived, MessageSendFailed, SendMessage, UserConnected, UserDisconnected,
+};
 use ecson_ecs::resources::{ConnectionMap, NetworkSender};
 use ecson_ecs::systems::NetworkReceiver;
 use tokio::sync::mpsc;
@@ -30,6 +35,7 @@ fn setup_network_ecs(app: &mut EcsonApp, ecs_buffer: usize) {
     app.add_event::<SendMessage>();
     app.add_event::<UserDisconnected>();
     app.add_event::<MessageSendFailed>();
+    app.add_event::<UserConnected>();
 
     app.add_systems(
         Update,
@@ -56,15 +62,16 @@ fn get_runtime(app: &EcsonApp) -> TokioRuntime {
 // ============================================================================
 
 pub struct EcsonWebSocketPlugin {
-    pub address: String,
+    pub address: ServerAddress,
     ecs_buffer: usize,
     client_buffer: usize,
 }
 
 impl EcsonWebSocketPlugin {
     pub fn new(address: impl Into<String>) -> Self {
+        let valid_addr = ServerAddress::new(address).unwrap_or_else(|e| panic!("{e}"));
         Self {
-            address: address.into(),
+            address: valid_addr,
             ecs_buffer: DEFAULT_ECS_BUFFER,
             client_buffer: DEFAULT_CLIENT_BUFFER,
         }
@@ -86,13 +93,13 @@ impl Plugin for EcsonWebSocketPlugin {
         setup_network_ecs(app, self.ecs_buffer);
 
         let ecs_tx = app.get_resource::<NetworkSender>().unwrap().0.clone();
-        let addr = self.address.clone();
+        let addr = self.address;
         let client_buffer = self.client_buffer;
 
         // 共有 Runtime 上にタスクをスポーンする。
         // std::thread::spawn + block_on を使わないため、スレッドが増えない。
         get_runtime(app).spawn(async move {
-            if let Err(e) = crate::ws_server::run(&addr, ecs_tx, client_buffer).await {
+            if let Err(e) = crate::ws_server::run(addr.0, ecs_tx, client_buffer).await {
                 error!("Ecson WS Server Error: {e}");
             }
         });
@@ -104,7 +111,7 @@ impl Plugin for EcsonWebSocketPlugin {
 // ============================================================================
 
 pub struct EcsonWebSocketTlsPlugin {
-    address: String,
+    pub address: ServerAddress,
     cert_path: String,
     key_path: String,
     ecs_buffer: usize,
@@ -117,8 +124,9 @@ impl EcsonWebSocketTlsPlugin {
         cert_path: impl Into<String>,
         key_path: impl Into<String>,
     ) -> Self {
+        let valid_addr = ServerAddress::new(address).unwrap_or_else(|e| panic!("{e}"));
         Self {
-            address: address.into(),
+            address: valid_addr,
             cert_path: cert_path.into(),
             key_path: key_path.into(),
             ecs_buffer: DEFAULT_ECS_BUFFER,
@@ -142,7 +150,7 @@ impl Plugin for EcsonWebSocketTlsPlugin {
         setup_network_ecs(app, self.ecs_buffer);
 
         let ecs_tx = app.get_resource::<NetworkSender>().unwrap().0.clone();
-        let addr = self.address.clone();
+        let addr = self.address;
         let client_buffer = self.client_buffer;
 
         // TLS アクセプタの構築は同期処理なので、spawn 前に済ませる。
@@ -150,7 +158,7 @@ impl Plugin for EcsonWebSocketTlsPlugin {
             .expect("TLS証明書の読み込みに失敗しました");
 
         get_runtime(app).spawn(async move {
-            if let Err(e) = crate::wss_server::run(&addr, acceptor, ecs_tx, client_buffer).await {
+            if let Err(e) = crate::wss_server::run(addr.0, acceptor, ecs_tx, client_buffer).await {
                 error!("Ecson WSS Server Error: {e}");
             }
         });
@@ -162,15 +170,16 @@ impl Plugin for EcsonWebSocketTlsPlugin {
 // ============================================================================
 
 pub struct EcsonWebSocketTlsDevPlugin {
-    address: String,
+    pub address: ServerAddress,
     ecs_buffer: usize,
     client_buffer: usize,
 }
 
 impl EcsonWebSocketTlsDevPlugin {
     pub fn new(address: impl Into<String>) -> Self {
+        let valid_addr = ServerAddress::new(address).unwrap_or_else(|e| panic!("{e}"));
         Self {
-            address: address.into(),
+            address: valid_addr,
             ecs_buffer: DEFAULT_ECS_BUFFER,
             client_buffer: DEFAULT_CLIENT_BUFFER,
         }
@@ -192,7 +201,7 @@ impl Plugin for EcsonWebSocketTlsDevPlugin {
         setup_network_ecs(app, self.ecs_buffer);
 
         let ecs_tx = app.get_resource::<NetworkSender>().unwrap().0.clone();
-        let addr = self.address.clone();
+        let addr = self.address;
         let client_buffer = self.client_buffer;
 
         let acceptor = crate::tls::build_self_signed_acceptor(vec![
@@ -202,7 +211,7 @@ impl Plugin for EcsonWebSocketTlsDevPlugin {
         .expect("自己署名証明書の生成に失敗しました");
 
         get_runtime(app).spawn(async move {
-            if let Err(e) = crate::wss_server::run(&addr, acceptor, ecs_tx, client_buffer).await {
+            if let Err(e) = crate::wss_server::run(addr.0, acceptor, ecs_tx, client_buffer).await {
                 error!("Ecson WSS Dev Server Error: {e}");
             }
         });
@@ -214,15 +223,16 @@ impl Plugin for EcsonWebSocketTlsDevPlugin {
 // ============================================================================
 
 pub struct EcsonWebTransportDevPlugin {
-    pub address: String,
+    pub address: ServerAddress,
     ecs_buffer: usize,
     client_buffer: usize,
 }
 
 impl EcsonWebTransportDevPlugin {
     pub fn new(address: impl Into<String>) -> Self {
+        let valid_addr = ServerAddress::new(address).unwrap_or_else(|e| panic!("{e}"));
         Self {
-            address: address.into(),
+            address: valid_addr,
             ecs_buffer: DEFAULT_ECS_BUFFER,
             client_buffer: DEFAULT_CLIENT_BUFFER,
         }
@@ -244,13 +254,39 @@ impl Plugin for EcsonWebTransportDevPlugin {
         setup_network_ecs(app, self.ecs_buffer);
 
         let ecs_tx = app.get_resource::<NetworkSender>().unwrap().0.clone();
-        let addr = self.address.clone();
+        let addr = self.address;
         let client_buffer = self.client_buffer;
 
         get_runtime(app).spawn(async move {
-            if let Err(e) = crate::wt_server::run(&addr, ecs_tx, client_buffer).await {
+            if let Err(e) = crate::wt_server::run(addr.0, ecs_tx, client_buffer).await {
                 error!("WebTransport Server Error: {e}");
             }
         });
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ServerAddress(SocketAddr);
+
+impl Deref for ServerAddress {
+    type Target = SocketAddr;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl ServerAddress {
+    pub fn new(address: impl Into<String>) -> Result<Self, String> {
+        let addr_str = address.into();
+
+        addr_str.parse::<SocketAddr>().map(Self).map_err(|e| {
+            format!(
+                "Failed to parse server address.\n\
+                Input value: '{addr_str}'\n\
+                Error details: '{e}'\n\
+                Tip: The address should be in the format of '127.0.0.1:8080'.",
+            )
+        })
     }
 }

@@ -18,7 +18,7 @@ fn main() {
 
     EcsonApp::new()
         .add_plugins((
-            EcsonWebSocketPlugin::new("127.0.0.1:8080"),
+            EcsonWebSocketPlugin::new("127.0.0.1:80800"),
             EcsonWebTransportDevPlugin::new("127.0.0.1:4433"),
         ))
         .add_systems(Update, echo_system)

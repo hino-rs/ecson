@@ -1,5 +1,7 @@
 //! WebTransportサーバーの起動と、クライアント接続の受け入れを管理するモジュールです。
 
+use std::net::SocketAddr;
+
 use crate::wt_connection;
 use ecson_ecs::channels::NetworkEvent;
 use tokio::sync::mpsc;
@@ -7,7 +9,7 @@ use tracing::{error, info};
 use wtransport::{Endpoint, Identity, ServerConfig};
 
 pub async fn run(
-    addr: &str,
+    addr: SocketAddr,
     ecs_tx: mpsc::Sender<NetworkEvent>,
     client_buffer: usize,
 ) -> Result<(), Box<dyn std::error::Error>> {
@@ -21,12 +23,12 @@ pub async fn run(
     );
 
     let config = ServerConfig::builder()
-        .with_bind_address(addr.parse()?)
+        .with_bind_address(addr)
         .with_identity(identity)
         .build();
 
     let endpoint = Endpoint::server(config)?;
-    info!("WebTransport server listening on https://{addr}");
+    info!("WebTransport server listening on https://{}", addr);
 
     loop {
         let incoming_session = endpoint.accept().await;

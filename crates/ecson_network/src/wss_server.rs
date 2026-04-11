@@ -1,5 +1,7 @@
 //! TLS付きWebSocketサーバー（WSS）の起動と接続受け入れを管理するモジュール
 
+use std::net::SocketAddr;
+
 use crate::ws_connection;
 use ecson_ecs::channels::NetworkEvent;
 use tokio::net::TcpListener;
@@ -8,13 +10,13 @@ use tokio_rustls::TlsAcceptor;
 use tracing::{info, warn};
 
 pub async fn run(
-    addr: &str,
+    addr: SocketAddr,
     acceptor: TlsAcceptor,
     ecs_tx: mpsc::Sender<NetworkEvent>,
     client_buffer: usize,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let listener = TcpListener::bind(addr).await?;
-    info!("WebSocket(TLS) server listening on wss://{addr}");
+    info!("WebSocket(TLS) server listening on wss://{}", addr);
 
     while let Ok((tcp_stream, peer_addr)) = listener.accept().await {
         let conn_id = rand::random::<u64>();
