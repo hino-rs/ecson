@@ -117,7 +117,7 @@ impl RateLimitPlugin {
 }
 
 impl Plugin for RateLimitPlugin {
-    fn build(&self, app: &mut EcsonApp) {
+    fn build(&mut self, app: &mut EcsonApp) {
         app.insert_resource(RateLimitConfig {
             window_secs: self.window_secs,
             max_messages: self.max_messages,

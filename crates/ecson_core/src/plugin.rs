@@ -15,7 +15,7 @@ pub enum PluginsState {
 
 /// 個別のプラグインが実装する基本トレイト。
 pub trait Plugin {
-    fn build(&self, app: &mut EcsonApp);
+    fn build(&mut self, app: &mut EcsonApp);
 
     /// シャットダウン時に呼ばれるクリーンアップ処理
     fn cleanup(&self, _app: &mut World) {}
@@ -27,7 +27,7 @@ pub trait Plugins {
 }
 
 impl<P: Plugin + 'static> Plugins for P {
-    fn add_to_app(self, app: &mut EcsonApp) {
+    fn add_to_app(mut self, app: &mut EcsonApp) {
         self.build(app);
         app.plugins.push(Box::new(self));
     }
@@ -38,7 +38,7 @@ macro_rules! impl_plugins_for_tuples {
         impl<$($name: Plugin + 'static),*> Plugins for ($($name,)*) {
             #[allow(non_snake_case)]
             fn add_to_app(self, app: &mut EcsonApp) {
-                let ($($name,)*) = self;
+                let ($(mut $name,)*) = self;
                 $(
                     $name.build(app);
                     app.plugins.push(Box::new($name));
@@ -54,3 +54,7 @@ impl_plugins_for_tuples!(P1, P2, P3);
 impl_plugins_for_tuples!(P1, P2, P3, P4);
 impl_plugins_for_tuples!(P1, P2, P3, P4, P5);
 impl_plugins_for_tuples!(P1, P2, P3, P4, P5, P6);
+impl_plugins_for_tuples!(P1, P2, P3, P4, P5, P6, P7);
+impl_plugins_for_tuples!(P1, P2, P3, P4, P5, P6, P7, P8);
+impl_plugins_for_tuples!(P1, P2, P3, P4, P5, P6, P7, P8, P9);
+impl_plugins_for_tuples!(P1, P2, P3, P4, P5, P6, P7, P8, P9, P10);

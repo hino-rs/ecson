@@ -89,7 +89,7 @@ impl EcsonWebSocketPlugin {
 }
 
 impl Plugin for EcsonWebSocketPlugin {
-    fn build(&self, app: &mut EcsonApp) {
+    fn build(&mut self, app: &mut EcsonApp) {
         setup_network_ecs(app, self.ecs_buffer);
 
         let ecs_tx = app.get_resource::<NetworkSender>().unwrap().0.clone();
@@ -146,7 +146,7 @@ impl EcsonWebSocketTlsPlugin {
 }
 
 impl Plugin for EcsonWebSocketTlsPlugin {
-    fn build(&self, app: &mut EcsonApp) {
+    fn build(&mut self, app: &mut EcsonApp) {
         setup_network_ecs(app, self.ecs_buffer);
 
         let ecs_tx = app.get_resource::<NetworkSender>().unwrap().0.clone();
@@ -197,7 +197,7 @@ impl EcsonWebSocketTlsDevPlugin {
 }
 
 impl Plugin for EcsonWebSocketTlsDevPlugin {
-    fn build(&self, app: &mut EcsonApp) {
+    fn build(&mut self, app: &mut EcsonApp) {
         setup_network_ecs(app, self.ecs_buffer);
 
         let ecs_tx = app.get_resource::<NetworkSender>().unwrap().0.clone();
@@ -250,7 +250,7 @@ impl EcsonWebTransportDevPlugin {
 }
 
 impl Plugin for EcsonWebTransportDevPlugin {
-    fn build(&self, app: &mut EcsonApp) {
+    fn build(&mut self, app: &mut EcsonApp) {
         setup_network_ecs(app, self.ecs_buffer);
 
         let ecs_tx = app.get_resource::<NetworkSender>().unwrap().0.clone();
@@ -289,4 +289,11 @@ impl ServerAddress {
             )
         })
     }
+}
+
+#[cfg(test)]
+#[test]
+#[should_panic]
+fn inappropriate_address() {
+    EcsonWebSocketPlugin::new("127.0.0.1:80800");
 }

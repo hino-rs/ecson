@@ -111,7 +111,7 @@ impl LobbyPlugin {
 }
 
 impl Plugin for LobbyPlugin {
-    fn build(&self, app: &mut EcsonApp) {
+    fn build(&mut self, app: &mut EcsonApp) {
         // LobbyConfig（新規）
         app.insert_resource(LobbyConfig {
             default_max_members: self.default_max_members,

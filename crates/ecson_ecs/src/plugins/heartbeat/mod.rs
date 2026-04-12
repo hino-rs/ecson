@@ -105,7 +105,7 @@ impl HeartbeatPlugin {
 }
 
 impl Plugin for HeartbeatPlugin {
-    fn build(&self, app: &mut EcsonApp) {
+    fn build(&mut self, app: &mut EcsonApp) {
         app.insert_resource(HeartbeatConfig {
             interval_secs: self.interval_secs,
             timeout_secs: self.timeout_secs,
