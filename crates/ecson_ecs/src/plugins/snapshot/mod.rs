@@ -100,7 +100,7 @@
 //     /// collector: &World → Vec<(entity_id, json)>
 //     pub(crate) collectors: Vec<(
 //         &'static str,
-//         Box<dyn Fn(&World) -> Vec<(u32, String)> + Send + Sync>,
+//         Box<dyn Fn(&mut World) -> Vec<(u32, String)> + Send + Sync>,
 //     )>,
 // }
 
@@ -223,9 +223,11 @@
 //     pub fn register<T: SnapshotData>(mut self) -> Self {
 //         self.registry.collectors.push((
 //             T::component_name(),
-//             Box::new(|world| {
-//                 // TODO: world.query::<(Entity, &T)>() で収集する実装
-//                 todo!()
+//             Box::new(|world: &mut World| {
+//                 let mut qs = world.query_filtered::<(Entity, &T), With<Snapshotable>>();
+//                 qs.iter(world)
+//                     .map(|(e, t)| (e.to_bits() as u32, t.to_snapshot_json()))
+//                     .collect()
 //             }),
 //         ));
 //         self

@@ -27,11 +27,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [0.2.3] - 2026-04-08
 
-**Unnecessary update**
+Updated `ecson::prelude`
 
 ## [0.2.2] - 2026-04-08
 
-**Unnecessary update**
+Updated `ecson::prelude`
 
 ---
 

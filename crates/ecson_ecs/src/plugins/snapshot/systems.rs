@@ -11,12 +11,14 @@
 
 // /// `SubscribeSnapshotEvent` を受け取り、対象エンティティに `SnapshotSubscriber` を付与する。
 // ///
-// /// 新規購読者にはフルスナップショットを即時送信する。（TODO）
+// /// 新規購読者にはフルスナップショットを即時送信する。
 // pub fn handle_subscribe_system(
 //     mut commands: Commands,
 //     mut ev_sub: MessageReader<SubscribeSnapshotEvent>,
 // ) {
-//     todo!()
+//     for ev in ev_sub.read() {
+//         commands.entity(ev.target.entity()).insert(SnapshotSubscriber);
+//     }
 // }
 
 // /// `UnsubscribeSnapshotEvent` を受け取り、対象エンティティから `SnapshotSubscriber` を除去する。
@@ -24,7 +26,9 @@
 //     mut commands: Commands,
 //     mut ev_unsub: MessageReader<UnsubscribeSnapshotEvent>,
 // ) {
-//     todo!()
+//     for ev in ev_unsub.read() {
+//         commands.entity(ev.target.entity()).remove::<SnapshotSubscriber>();
+//     }
 // }
 
 // // ============================================================================
@@ -39,13 +43,39 @@
 // /// 3. `SnapshotMode::Full` → 全エンティティを `upserted` に積む
 // /// 4. `SnapshotMode::Delta` → 前回との差分（追加・変更・削除）のみを積む
 // /// 5. 差分なしなら `pending` を `None` のままにして broadcast をスキップさせる
-// pub fn collect_snapshot_system(
-//     config: Res<SnapshotConfig>,
-//     mut state: ResMut<SnapshotState>,
-//     registry: Res<SnapshotRegistry>,
-//     world: &World,
-// ) {
-//     todo!()
+// pub fn collect_snapshot_system(world: &mut World,) {
+//     // インターバルチェック
+//     let (interval_secs, mode) = {
+//         let config = world.resource::<SnapshotConfig>();
+//         (config.interval_secs, config.mode)
+//     };
+//     {
+//         let state = world.resource::<SnapshotState>();
+//         if state.last_sent.elapsed().as_secs_f32() < interval_secs {
+//             return;
+//         }
+//     }
+
+//     // Registryを一時的にWorldから取り出す
+//     let Some(registry) = world.remove_resource::<SnapshotRegistry>() else {
+//         return;
+//     };
+
+//     let last_snapshot = world.resource::<SnapshotState>().last_snapshot.clone();
+
+//     // 収納
+//     let frame = match mode {
+//         SnapshotMode::Full  => collect_full(&registry, world),
+//         SnapshotMode::Delta => collect_delta(&registry, world, &last_snapshot),
+//     };
+
+//     // RegistryをWorldに戻す
+//     world.insert_resource(registry);
+
+//     // pendingに収納
+//     let mut state = world.resource_mut::<SnapshotState>();
+//     state.pending = if frame.is_empty() { None } else { Some(frame) };
+//     state.last_sent = std::time::Instant::now();
 // }
 
 // /// Full モード用の収集ロジック。全 Snapshotable エンティティを返す。

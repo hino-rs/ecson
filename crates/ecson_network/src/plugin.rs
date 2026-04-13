@@ -265,6 +265,45 @@ impl Plugin for EcsonWebTransportDevPlugin {
     }
 }
 
+// ============================================
+// HTTP
+// ============================================
+
+pub struct EcsonHttpPlugin {
+    pub address: ServerAddress,
+    pub router: Option<axum::Router>,
+}
+
+impl Plugin for EcsonHttpPlugin {
+    fn build(&mut self, app: &mut EcsonApp) {
+        let runtime = get_runtime(app);
+        let addr = self.address;
+        let router = self.router.take().expect("router required");
+
+        runtime.spawn(async move {
+            let listener = tokio::net::TcpListener::bind(addr.0).await.unwrap();
+            axum::serve(listener, router).await.unwrap();
+        });
+    }
+}
+
+impl EcsonHttpPlugin {
+    pub fn new(address: impl Into<String>) -> Self {
+        let valid_addr = ServerAddress::new(address).unwrap_or_else(|e| panic!("{e}"));
+        Self {
+            address: valid_addr,
+            router: None,
+        }
+    }
+
+    pub fn router(&mut self, router: axum::Router) -> Self {
+        EcsonHttpPlugin {
+            address: self.address,
+            router: Some(router),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ServerAddress(SocketAddr);
 

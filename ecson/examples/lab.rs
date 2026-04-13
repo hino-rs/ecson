@@ -1,19 +1,32 @@
-// Exampleではないです
-// 適当実験したいときに使います。
-
+use axum::{Router, routing::get};
 use ecson::prelude::*;
 
-#[derive(Resource, Debug)]
-struct Count(u128);
+fn echo_system(
+    mut messages: MessageReader<MessageReceived>,
+    mut outbound: MessageWriter<SendMessage>,
+) {
+    for message in messages.read() {
+        outbound.write(SendMessage {
+            target: message.entity,
+            payload: message.payload.clone(),
+        });
+    }
+}
 
-fn x(mut count: ResMut<Count>) {
-    count.0 += 1;
-    println!("{count:?}");
+async fn root() -> &'static str {
+    "Hello, Axum!"
 }
 
 fn main() {
+    tracing_subscriber::fmt::init();
+    let router = Router::new().route("/", get(root));
+
     EcsonApp::new()
-        .insert_resource(Count(0))
-        .add_systems(Update, x)
-        .tick_n(100);
+        .add_plugins((
+            EcsonWebSocketPlugin::new("127.0.0.1:8080"),
+            EcsonWebTransportDevPlugin::new("127.0.0.1:4433"),
+        ))
+        .add_plugins(EcsonHttpPlugin::new("127.0.0.1:8081").router(router))
+        .add_systems(Update, echo_system)
+        .run();
 }
