@@ -2,11 +2,10 @@ use proc_macro::TokenStream;
 use quote::quote;
 use syn::{DeriveInput, parse_macro_input, parse_quote};
 
-/// `#[ecson::component]` または `#[component]` (use ecson::prelude::* 後) で
-/// `bevy_ecs::component::Component` を実装します。
+/// Implements `bevy_ecs::component::Component` via `#[ecson::component]`
+/// or `#[component]` (after `use ecson::prelude::*`).
 ///
-///
-/// # 例
+/// # Example
 /// ```rust, ignore
 /// use ecson::prelude::*;
 ///
@@ -36,10 +35,10 @@ pub fn component(_attr: TokenStream, item: TokenStream) -> TokenStream {
     .into()
 }
 
-/// `#[ecson::resource]` または `#[resource]` (use ecson::prelude::* 後) で
-/// `bevy_ecs::system::Resource` を実装します。
+/// Implements `bevy_ecs::system::Resource` via `#[ecson::resource]`
+/// or `#[resource]` (after `use ecson::prelude::*`).
 ///
-/// # 例
+/// # Example
 /// ```ignore
 /// use ecson::prelude::*;
 ///
@@ -65,10 +64,10 @@ pub fn resource(_attr: TokenStream, item: TokenStream) -> TokenStream {
     .into()
 }
 
-/// `#[ecson::message]` または `#[message]` (use ecson::prelude::* 後) で
-/// `bevy_ecs::message::Message` を実装します。
+/// Implements `bevy_ecs::message::Message` via `#[ecson::message]`
+/// or `#[message]` (after `use ecson::prelude::*`).
 ///
-/// # 例
+/// # Example
 /// ```ignore
 /// use ecson::prelude::*;
 ///

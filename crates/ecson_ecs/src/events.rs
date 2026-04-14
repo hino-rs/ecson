@@ -1,30 +1,30 @@
-//! クライアントとの通信や、システム間でやり取りされるイベント（Message）を定義します。
+//! Defines events (Messages) exchanged between clients and systems.
 
 use crate::channels::NetworkPayload;
 use bevy_ecs::entity::Entity;
 use bevy_ecs::message::Message;
 
-/// メッセージ送信失敗の理由
+/// Reason for a message send failure.
 #[derive(Debug)]
 pub enum SendFailReason {
-    /// `try_send` がエラーを返した（チャネルが詰まっている、切断済みなど）
+    /// `try_send` returned an error (channel full, already disconnected, etc.).
     ChannelError(String),
-    /// 対象エンティティがすでに World に存在しない
+    /// The target entity no longer exists in the World.
     EntityNotFound,
 }
 
 // =====================================================
-// メッセージ送受信・失敗
+// Message send / receive / failure
 // =====================================================
 
-/// サーバーから特定のクライアントへメッセージを送信するためのイベント。
+/// Event for sending a message from the server to a specific client.
 #[derive(Message)]
 pub struct SendMessage {
     pub target: Entity,
     pub payload: NetworkPayload,
 }
 
-/// クライアントからメッセージを受信した際に発行されるイベント。
+/// Event fired when a message is received from a client.
 #[derive(Message)]
 pub struct MessageReceived {
     pub entity: Entity,
@@ -32,7 +32,7 @@ pub struct MessageReceived {
     pub payload: NetworkPayload,
 }
 
-/// メッセージの送信に失敗した際に発行されるイベント
+/// Event fired when sending a message fails.
 #[derive(Message)]
 pub struct MessageSendFailed {
     pub entity: Entity,
@@ -40,17 +40,17 @@ pub struct MessageSendFailed {
 }
 
 // =====================================================
-// クライアント接続・切断
+// Client connect / disconnect
 // =====================================================
 
-/// クライアントが接続した際に発行されるイベント
+/// Event fired when a client connects.
 #[derive(Message)]
 pub struct UserConnected {
     pub entity: Entity,
     pub client_id: u64,
 }
 
-/// クライアントとの接続が切断された際に発行されるイベント。
+/// Event fired when a client disconnects.
 #[derive(Message)]
 pub struct UserDisconnected {
     pub entity: Entity,

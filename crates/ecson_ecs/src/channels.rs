@@ -1,29 +1,29 @@
-//! ネットワーク層（Tokio非同期タスク）とECS層（同期ゲームループ）の間で
-//! やり取りされるメッセージやイベントの型を定義するモジュールです。
+//! Defines the message and event types exchanged between the network layer
+//! (async Tokio tasks) and the ECS layer (synchronous game loop).
 
 use tokio::sync::mpsc;
 
-/// ネットワーク経由で送受信される実データのペイロード。
-/// テキストデータ（JSONなど）とバイナリデータの両方をサポートします。
+/// Payload for data sent or received over the network.
+/// Supports both text (e.g. JSON) and binary data.
 #[derive(Debug, Clone)]
 pub enum NetworkPayload {
-    /// 文字列データ
+    /// Text data.
     Text(String),
-    /// バイナリデータ
+    /// Binary data.
     Binary(Vec<u8>),
 }
 
-/// ネットワーク層からECS層へ送信されるイベント群。
+/// Events sent from the network layer to the ECS layer.
 pub enum NetworkEvent {
-    /// 新しいクライアントが接続を確立したことを示します。
+    /// Indicates that a new client has established a connection.
     Connected {
         id: u64,
         sender: mpsc::Sender<NetworkPayload>,
     },
 
-    /// クライアントからメッセージを受信したことを示します。
+    /// Indicates that a message was received from a client.
     Message { id: u64, payload: NetworkPayload },
 
-    /// クライアントとの接続が切断されたことを示します。
+    /// Indicates that a client connection was closed.
     Disconnected { id: u64 },
 }

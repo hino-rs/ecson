@@ -2,10 +2,10 @@ use super::{RateLimitAction, RateLimitConfig, RateLimitExceededEvent, RateLimitS
 use crate::prelude::*;
 use bevy_ecs::prelude::*;
 
-/// 新しく接続したクライアントに RateLimitState を付与するシステム
+/// System that attaches `RateLimitState` to newly connected clients.
 ///
-/// heartbeat の setup_heartbeat_system と同じパターン。
-/// ClientId を持つが RateLimitState をまだ持っていないエンティティへアタッチする。
+/// Follows the same pattern as `setup_heartbeat_system`.
+/// Attaches to entities that have `ClientId` but not yet `RateLimitState`.
 pub fn setup_rate_limit_system(
     mut commands: Commands,
     query: Query<Entity, (With<ClientId>, Without<RateLimitState>)>,
@@ -15,16 +15,16 @@ pub fn setup_rate_limit_system(
     }
 }
 
-/// 受信メッセージのレートを検査し、超過した場合に制限を適用するシステム
+/// System that inspects incoming message rates and applies limits when exceeded.
 ///
-/// # 動作
-/// 1. スロットル中のクライアントからのメッセージは即 Drop し `RateLimitExceededEvent` を発行
-/// 2. ウィンドウ内カウントが `max_messages` を超えたら `RateLimitAction` に応じて処理
-///    - `Drop`       : イベントを発行するだけ（他システムへの伝播は防げない点に注意）
-///    - `Throttle`   : `throttled_until` をセットし警告を送信
-///    - `Disconnect` : 警告を送信 → `UserDisconnected` 発行 → despawn
+/// # Behavior
+/// 1. Messages from throttled clients are immediately dropped and a `RateLimitExceededEvent` is fired.
+/// 2. When the count within the window exceeds `max_messages`, the configured `RateLimitAction` is applied:
+///    - `Drop`       : fires the event only (note: cannot prevent other systems from reading the same `MessageReceived`)
+///    - `Throttle`   : sets `throttled_until` and sends a warning to the client
+///    - `Disconnect` : sends a warning, fires `UserDisconnected`, then despawns the entity
 ///
-/// # スケジュール: Update（ネットワーク受信直後に動作）
+/// # Schedule: Update (runs immediately after network receive)
 pub fn check_rate_limit_system(
     mut commands: Commands,
     config: Res<RateLimitConfig>,
@@ -40,28 +40,28 @@ pub fn check_rate_limit_system(
         };
         let now = std::time::Instant::now();
 
-        // ── スロットル中チェック ──────────────────────────────────────────
+        // ── throttle check ───────────────────────────────────────────────
         if let Some(until) = state.throttled_until {
             if now < until {
-                // 期間内はカウントせず破棄
+                // still within throttle window — drop without counting
                 ev_exceeded.write(RateLimitExceededEvent {
                     entity,
                     client_id: client_id.0,
                 });
                 continue;
             }
-            // 期間が過ぎていたら解除
+            // window expired — clear throttle
             state.throttled_until = None;
         }
 
-        // ── カウントアップ ────────────────────────────────────────────────
+        // ── count up ─────────────────────────────────────────────────────
         state.message_count += 1;
 
         if state.message_count <= config.max_messages {
-            continue; // 制限内なので何もしない
+            continue; // within limit, nothing to do
         }
 
-        // ── 制限超過 ──────────────────────────────────────────────────────
+        // ── limit exceeded ───────────────────────────────────────────────
         ev_exceeded.write(RateLimitExceededEvent {
             entity,
             client_id: client_id.0,
@@ -69,9 +69,9 @@ pub fn check_rate_limit_system(
 
         match &config.action {
             RateLimitAction::Drop => {
-                // このシステムとしての処理はここで終了。
-                // 注: 他システムが同一の MessageReceived を独立して読むため
-                //     完全なドロップは現アーキテクチャでは行えない。
+                // This system's handling ends here.
+                // Note: a full drop is not possible in the current architecture because
+                // other systems read the same MessageReceived independently.
             }
 
             RateLimitAction::Throttle { duration_secs } => {
@@ -102,11 +102,11 @@ pub fn check_rate_limit_system(
     }
 }
 
-/// 各クライアントのレートウィンドウを定期的にリセットするシステム
+/// System that periodically resets the rate window for each client.
 ///
-/// `window_secs` が経過したクライアントの `message_count` と `window_start` をリセットする。
+/// Resets `message_count` and `window_start` for clients whose `window_secs` have elapsed.
 ///
-/// # スケジュール: FixedUpdate
+/// # Schedule: FixedUpdate
 pub fn reset_rate_limit_windows_system(
     config: Res<RateLimitConfig>,
     mut query: Query<&mut RateLimitState>,

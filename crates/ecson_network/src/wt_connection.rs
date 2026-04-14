@@ -1,4 +1,4 @@
-//! WebTransportクライアントとの個別の接続を処理し、ECSとのメッセージ送受信を仲介するモジュールです。
+//! Module for handling individual WebTransport client connections and bridging message I/O with the ECS layer.
 
 use ecson_ecs::channels::{NetworkEvent, NetworkPayload};
 use tokio::sync::mpsc;

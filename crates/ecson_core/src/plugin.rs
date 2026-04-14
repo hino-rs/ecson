@@ -1,10 +1,10 @@
-//! プラグインシステムの基盤
+//! Foundation of the plugin system.
 
 use bevy_ecs::world::World;
 
 use crate::app::*;
 
-/// プラグインのライフサイクル状態を表す列挙型。
+/// Enum representing the lifecycle state of plugins.
 #[derive(PartialEq, Eq, Debug, Clone, Copy, PartialOrd, Ord)]
 pub enum PluginsState {
     Adding,
@@ -13,15 +13,15 @@ pub enum PluginsState {
     Cleaned,
 }
 
-/// 個別のプラグインが実装する基本トレイト。
+/// The base trait that individual plugins implement.
 pub trait Plugin {
     fn build(&mut self, app: &mut EcsonApp);
 
-    /// シャットダウン時に呼ばれるクリーンアップ処理
+    /// Cleanup logic called on shutdown.
     fn cleanup(&self, _app: &mut World) {}
 }
 
-/// `app.add_plugins()` に単一の `Plugin` や複数の `Plugin` タプルを渡せるようにするトレイト。
+/// Trait that allows passing a single `Plugin` or a tuple of `Plugin`s to `app.add_plugins()`.
 pub trait Plugins {
     fn add_to_app(self, app: &mut EcsonApp);
 }

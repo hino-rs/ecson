@@ -1,4 +1,4 @@
-//! WebTransportサーバーの起動と、クライアント接続の受け入れを管理するモジュールです。
+//! Module for starting the WebTransport server and accepting incoming client connections.
 
 use std::net::SocketAddr;
 

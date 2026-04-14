@@ -1,15 +1,15 @@
 use bevy_ecs::resource::Resource;
 
-/// サーバーの回転に関するコンフィグ
+/// Configuration for server tick timing.
 #[derive(Resource, Clone)]
 pub struct ServerTimeConfig {
-    /// Updateの間隔 (ms)
+    /// Interval between Update ticks (seconds).
     pub update_sleep: f64,
-    /// FixedUpdateの目標Tickレート(Hz)
+    /// Target tick rate for FixedUpdate (Hz).
     pub tick_rate: f64,
-    /// 1フレーム内で後れを取り戻すために実行できるFixedUpdateの最大回数
+    /// Maximum number of FixedUpdate ticks allowed per frame to catch up.
     pub max_ticks_per_frame: u32,
-    /// 初理落ち時に警告ログを出すかどうか
+    /// Whether to emit a warning log when ticks are dropped.
     pub warn_on_lag: bool,
 }
 

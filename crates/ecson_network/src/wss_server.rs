@@ -1,4 +1,4 @@
-//! TLS付きWebSocketサーバー（WSS）の起動と接続受け入れを管理するモジュール
+//! Module for starting the TLS-secured WebSocket server (WSS) and accepting incoming connections.
 
 use std::net::SocketAddr;
 

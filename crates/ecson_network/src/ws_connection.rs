@@ -1,4 +1,4 @@
-//! 個別のWebSocket接続を処理し、ECSとのメッセージ送受信を仲介するモジュールです。
+//! Module for handling individual WebSocket connections and bridging message I/O with the ECS layer.
 
 use ecson_ecs::channels::{NetworkEvent, NetworkPayload};
 use futures_util::{SinkExt, StreamExt};

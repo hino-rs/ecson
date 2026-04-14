@@ -1,4 +1,4 @@
-//! ネットワークイベントの受信処理や、クライアントへのメッセージ送信を行うECSシステム群です。
+//! ECS systems for receiving network events and dispatching outbound messages to clients.
 
 use crate::channels::NetworkEvent;
 use crate::components::*;
@@ -14,11 +14,11 @@ use tokio::sync::mpsc;
 use tracing::warn;
 use tracing::{error, info};
 
-/// Tokio側から送られてくるネットワークイベントを受信するためのリソースラッパー。
+/// Resource wrapper holding the receiver for network events sent from the Tokio side.
 #[derive(Resource)]
 pub struct NetworkReceiver(pub mpsc::Receiver<NetworkEvent>);
 
-/// ネットワーク層からのイベントをポーリングし、ECS側の状態を更新するシステム。
+/// System that polls network layer events and updates ECS state accordingly.
 pub fn receive_network_messages_system(
     mut commands: Commands,
     mut ecs_rx: ResMut<NetworkReceiver>,
@@ -40,7 +40,7 @@ pub fn receive_network_messages_system(
                     entity,
                     client_id: id,
                 });
-                info!("ECS: 新規接続 {id} -> Entity {entity:?}");
+                info!("ECS: new connection {id} -> Entity {entity:?}");
             }
             NetworkEvent::Message { id, payload } => {
                 if let Some(&entity) = connection_map.0.get(&id) {
@@ -52,7 +52,7 @@ pub fn receive_network_messages_system(
                 }
             }
             NetworkEvent::Disconnected { id } => {
-                info!("ECS: {} が切断されました", id);
+                info!("ECS: {} disconnected", id);
 
                 if let Some(entity) = connection_map.0.remove(&id) {
                     ev_disconnect.write(UserDisconnected {
@@ -65,7 +65,7 @@ pub fn receive_network_messages_system(
     }
 }
 
-/// ECS内で発行された送信要求（`SendMessage`）を処理し、ネットワーク層へ引き渡すシステム。
+/// System that processes outbound `SendMessage` events issued within ECS and forwards them to the network layer.
 pub fn flush_outbound_messages_system(
     mut outbound_messages: MessageReader<SendMessage>,
     query: Query<&ClientSender>,
@@ -96,7 +96,7 @@ pub fn flush_outbound_messages_system(
     }
 }
 
-/// 切断済みエンティティを最後にまとめて破棄するシステム。
+/// System that despawns disconnected entities at the end of the frame.
 pub fn despawn_disconnected_system(
     mut commands: Commands,
     mut ev_disconnected: MessageReader<UserDisconnected>,
