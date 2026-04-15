@@ -19,7 +19,7 @@ rustls-pemfile = "2.2.0"
 tokio = { version = "1.50.0", features = ["full"] }
 tokio-rustls = "0.26.4"
 tokio-tungstenite = "0.29.0"
-tokio-util = "0.7.18"
+tokio-util = { version = "0.7.18", features = ["codec"] }
 tracing = "0.1.44"
 wtransport = { version = "0.7.0", features = ["self-signed"] }
 rand = "0.10.0"

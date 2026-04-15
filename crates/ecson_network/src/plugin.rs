@@ -265,9 +265,9 @@ impl Plugin for EcsonWebTransportDevPlugin {
     }
 }
 
-// ============================================
+// ============================================================================
 // HTTP
-// ============================================
+// ============================================================================
 
 pub struct EcsonHttpPlugin {
     pub address: ServerAddress,
@@ -303,6 +303,78 @@ impl EcsonHttpPlugin {
         }
     }
 }
+
+// ============================================================================
+// TCP
+// ============================================================================
+
+/// Raw TCP server plugin.
+///
+/// Accepts direct TCP streams without WebSocket handshake.
+/// Suitable for implementing custom binary protocol servers like Minecraft.
+///
+/// # Example
+///
+/// ```rust, ignore
+/// use ecson::prelude::*;
+///
+/// fn main() {
+///     EcsonApp::new()
+///         .add_plugins(EcsonTcpPlugin::new("127.0.0.1:25565"))
+///         .add_systems(Update, minecraft_system)
+///         .run();
+/// }
+/// ```
+pub struct EcsonTcpPlugin {
+    pub address: ServerAddress,
+    ecs_buffer: usize,
+    client_buffer: usize,
+}
+
+impl EcsonTcpPlugin {
+    pub fn new(address: impl Into<String>) -> Self {
+        let valid_addr = ServerAddress::new(address).unwrap_or_else(|e| panic!("{e}"));
+        Self {
+            address: valid_addr,
+            ecs_buffer: DEFAULT_ECS_BUFFER,
+            client_buffer: DEFAULT_CLIENT_BUFFER,
+        }
+    }
+
+    pub fn ecs_buffer(mut self, size: usize) -> Self {
+        self.ecs_buffer = size;
+        self
+    }
+
+    pub fn client_buffer(mut self, size: usize) -> Self {
+        self.client_buffer = size;
+        self
+    }
+}
+
+impl Plugin for EcsonTcpPlugin {
+    fn build(&mut self, app: &mut EcsonApp) {
+        setup_network_ecs(app, self.ecs_buffer);
+
+        let ecs_tx = app.get_resource::<NetworkSender>().unwrap().0.clone();
+        let addr = self.address;
+        let client_buffer = self.client_buffer;
+
+        get_runtime(app).spawn(async move {
+            if let Err(e) = crate::tcp_server::run(addr.0, ecs_tx, client_buffer).await {
+                error!("Ecson TCP Server Error: {e}");
+            }
+        });
+    }
+}
+
+// ============================================================================
+// UDP
+// ============================================================================
+
+// ============================================================================
+// Server Address Newtype
+// ============================================================================
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ServerAddress(SocketAddr);
