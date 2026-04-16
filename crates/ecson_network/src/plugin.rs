@@ -372,8 +372,69 @@ impl Plugin for EcsonTcpPlugin {
 // UDP
 // ============================================================================
 
+/// Raw UDP server plugin.
+///
+/// Each unique remote address is treated as a distinct virtual connection.
+/// Because UDP is connectionless, `UserDisconnected` is **not** fired automatically;
+/// implement timeout logic in your own ECS system is needed.
+///
+/// # Example
+///
+/// ```rust, ignore
+/// use ecson::prelude::*;
+///
+/// fn main() {
+///     EcsonApp::new()
+///         .add_plugins(EcsonUdpPlugin::new("127.0.0.1:9000"))
+///         .add_systems(Update, my_udp_system)
+///         .run();
+/// }
+/// ```
+pub struct EcsonUdpPlugin {
+    pub address: ServerAddress,
+    ecs_buffer: usize,
+    client_buffer: usize,
+}
+
+impl EcsonUdpPlugin {
+    pub fn new(address: impl Into<String>) -> Self {
+        let valid_addr = ServerAddress::new(address).unwrap_or_else(|e| panic!("{e}"));
+        Self {
+            address: valid_addr,
+            ecs_buffer: DEFAULT_ECS_BUFFER,
+            client_buffer: DEFAULT_CLIENT_BUFFER,
+        }
+    }
+
+    pub fn ecs_buffer(mut self, size: usize) -> Self {
+        self.ecs_buffer = size;
+        self
+    }
+
+    pub fn client_buffer(mut self, size: usize) -> Self {
+        self.client_buffer = size;
+        self
+    }
+}
+
+impl Plugin for EcsonUdpPlugin {
+    fn build(&mut self, app: &mut EcsonApp) {
+        setup_network_ecs(app, self.ecs_buffer);
+
+        let ecs_tx = app.get_resource::<NetworkSender>().unwrap().0.clone();
+        let addr = self.address;
+        let client_buffer = self.client_buffer;
+
+        get_runtime(app).spawn(async move {
+            if let Err(e) = crate::udp_server::run(addr.0, ecs_tx, client_buffer).await {
+                error!("Ecson UDP Server Error: {e}");
+            }
+        });
+    }
+}
+
 // ============================================================================
-// Server Address Newtype
+// Server Address New type
 // ============================================================================
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
