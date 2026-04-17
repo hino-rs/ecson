@@ -1,7 +1,5 @@
 # Ecson v0.2.4
 
-[日本語](https://github.com/hino-rs/ecson/blob/main/README.ja.md)
-
 > An ECS-driven, stateful, bidirectional server framework for Rust
 
 **Ecson** is an experimental web server framework built for applications where real-time performance and persistent state management are critical. By combining `tokio`'s async I/O with the blazing-fast data-oriented design of `bevy_ecs`, you can build multiplayer game backends, real-time collaboration tools, and spatial simulations — without a single `Arc<Mutex<T>>`.
@@ -115,27 +113,28 @@ fn main() {
 }
 ```
 
-| Plugin | What it does |
-|:---|:---|
-| `ChatFullPlugin` | Room-based chat with `/nick`, `/join`, `/list` commands |
-| `HeartbeatPlugin` | Periodic ping/pong with automatic timeout disconnection |
-| `LobbyPlugin` | Matchmaking lobby management with `LobbyReadyEvent` |
-| `PresencePlugin` | Client presence state (Online / Away / Busy) |
-| `RateLimitPlugin` | Per-client message rate limiting with configurable actions |
-| `SnapshotPlugin` | Periodic state snapshots broadcast to subscribed clients |
-| `Spatial2DPlugin` / `Spatial3DPlugin` | Spatial position management with AOI (Area of Interest) notifications |
+| Plugin | What it does | State |
+|:---|:---|:---|
+| `ChatFullPlugin` | Room-based chat with `/nick`, `/join`, `/list` commands | 🟢 |
+| `HeartbeatPlugin` | Periodic ping/pong with automatic timeout disconnection | 🟢 |
+| `LobbyPlugin` | Matchmaking lobby management with `LobbyReadyEvent` | 🔴 |
+| `PresencePlugin` | Client presence state (Online / Away / Busy) | 🔴 |
+| `RateLimitPlugin` | Per-client message rate limiting with configurable actions | 🟢 | 
+| `SnapshotPlugin` | Periodic state snapshots broadcast to subscribed clients | 🔴 |
+| `Spatial2DPlugin` / `Spatial3DPlugin` | Spatial position management with AOI (Area of Interest) notifications | 🔴 | 
 
 ---
 
 ## Network Protocols
 
-| Plugin | Protocol | Use case |
-|:---|:---|:---|
-| `EcsonWebSocketPlugin` | WS | General purpose, dev & production |
-| `EcsonWebSocketTlsPlugin` | WSS | Production with TLS certificates |
-| `EcsonWebSocketTlsDevPlugin` | WSS (self-signed) | Development / testing |
-| `EcsonWebTransportDevPlugin` | WebTransport | Low-latency games, position sync |
-
+| Plugin                       | Protocol          | Use case                          |
+|:-----------------------------|:------------------|:----------------------------------|
+| `EcsonWebSocketPlugin`       | WS                | General purpose, dev & production |
+| `EcsonWebSocketTlsPlugin`    | WSS               | Production with TLS certificates  |
+| `EcsonWebSocketTlsDevPlugin` | WSS (self-signed) | Development / testing             |
+| `EcsonWebTransportDevPlugin` | WebTransport      | Low-latency games, position sync  |
+| `EcsonTcpPlugin`             | TCP               |                                   |
+| `EcsonUdpPlugin`             | UDP               | Realtime games                    |
 ---
 
 ## Examples
@@ -144,7 +143,6 @@ fn main() {
 cargo run --example echo
 cargo run --example broadcast_chat
 cargo run --example room_chat
-cargo run --example spatial_2d
 ```
 
 Frontend test HTML files are available in `examples/frontend/`. Open them directly in your browser to interact with the running server.
